@@ -105,6 +105,9 @@ const Index = () => {
                 <Button onClick={() => navigate('/messages')} variant="outline" className="w-full">
                   Messagerie
                 </Button>
+                <Button onClick={() => navigate('/documents')} variant="outline" className="w-full">
+                  Documents & Contrats
+                </Button>
               </>
             )}
             {userRole === 'locataire' && (

@@ -47,6 +47,54 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          created_at: string
+          date_signature: string | null
+          file_name: string
+          file_size: number
+          file_url: string
+          id: string
+          lease_id: string
+          signature_url: string | null
+          signe: boolean
+          titre: string
+          type_document: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          date_signature?: string | null
+          file_name: string
+          file_size: number
+          file_url: string
+          id?: string
+          lease_id: string
+          signature_url?: string | null
+          signe?: boolean
+          titre: string
+          type_document: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          date_signature?: string | null
+          file_name?: string
+          file_size?: number
+          file_url?: string
+          id?: string
+          lease_id?: string
+          signature_url?: string | null
+          signe?: boolean
+          titre?: string
+          type_document?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       leases: {
         Row: {
           caution_montant: number

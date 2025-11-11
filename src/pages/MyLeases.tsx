@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home, Calendar, DollarSign, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Home, Calendar, DollarSign, CheckCircle, XCircle, FileText } from 'lucide-react';
 
 interface LeaseWithProperty extends Lease {
   property?: {
@@ -212,8 +212,16 @@ const MyLeases = () => {
                     >
                       Voir la propriété
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/documents?lease=${lease.id}`)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Documents
+                    </Button>
                     {userRole === 'locataire' && lease.statut === 'actif' && (
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => navigate('/payments')}>
                         Payer le loyer
                       </Button>
                     )}
