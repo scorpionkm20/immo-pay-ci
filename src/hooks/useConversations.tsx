@@ -13,6 +13,7 @@ export interface Conversation {
   updated_at: string;
   property_title?: string;
   other_user_name?: string;
+  other_user_phone?: string;
   unread_count?: number;
 }
 
@@ -49,7 +50,7 @@ export const useConversations = () => {
           
           const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select('full_name, phone')
             .eq('user_id', otherUserId)
             .single();
 
@@ -64,6 +65,7 @@ export const useConversations = () => {
             ...conv,
             property_title: property?.titre || 'Propriété inconnue',
             other_user_name: profile?.full_name || 'Utilisateur',
+            other_user_phone: profile?.phone || '',
             unread_count: count || 0
           };
         })

@@ -241,6 +241,9 @@ export type Database = {
           content: string
           conversation_id: string
           created_at: string
+          file_name: string | null
+          file_type: string | null
+          file_url: string | null
           id: string
           lu: boolean
           sender_id: string
@@ -249,6 +252,9 @@ export type Database = {
           content: string
           conversation_id: string
           created_at?: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
           id?: string
           lu?: boolean
           sender_id: string
@@ -257,6 +263,9 @@ export type Database = {
           content?: string
           conversation_id?: string
           created_at?: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
           id?: string
           lu?: boolean
           sender_id?: string

@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDocuments } from '@/hooks/useDocuments';
 import { useLeases } from '@/hooks/useLeases';
 import { useAuth } from '@/hooks/useAuth';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { SignatureCanvas } from '@/components/SignatureCanvas';
-import { ArrowLeft, FileText, Download, Trash2, PenTool, CheckCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Trash2, PenTool, CheckCircle, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,6 +22,7 @@ const Documents = () => {
   const [selectedLeaseId, setSelectedLeaseId] = useState<string>(leaseIdParam || '');
   const [showUpload, setShowUpload] = useState(false);
   const [signingDocument, setSigningDocument] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<string>('all');
   
   const { user, userRole } = useAuth();
   const { leases, loading: leasesLoading } = useLeases();
@@ -53,14 +55,21 @@ const Documents = () => {
   };
 
   const getDocumentTypeBadge = (type: string) => {
-    const colors: Record<string, string> = {
-      bail: 'bg-blue-500',
-      quittance: 'bg-green-500',
-      etat_lieux: 'bg-yellow-500',
-      autre: 'bg-gray-500'
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      bail: 'default',
+      quittance: 'secondary',
+      etat_lieux: 'outline',
+      autre: 'secondary'
     };
-    return colors[type] || 'bg-gray-500';
+    return variants[type] || 'secondary';
   };
+
+  const filteredDocuments = filterType === 'all' 
+    ? documents 
+    : documents.filter(doc => doc.type_document === filterType);
+
+  const signedDocuments = filteredDocuments.filter(doc => doc.signe);
+  const unsignedDocuments = filteredDocuments.filter(doc => !doc.signe);
 
   if (leasesLoading) {
     return (
@@ -85,6 +94,74 @@ const Documents = () => {
     );
   }
 
+  const DocumentCard = ({ doc }: { doc: any }) => (
+    <Card key={doc.id} className="hover:shadow-lg transition-shadow">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg mb-2">{doc.titre}</CardTitle>
+            <Badge variant={getDocumentTypeBadge(doc.type_document)}>
+              {getDocumentTypeLabel(doc.type_document)}
+            </Badge>
+          </div>
+          {doc.signe && (
+            <CheckCircle className="h-6 w-6 text-green-600" />
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-sm text-muted-foreground space-y-1">
+          <p className="font-medium">{doc.file_name}</p>
+          <p>{(doc.file_size / 1024 / 1024).toFixed(2)} MB</p>
+          <p>Ajouté le {format(new Date(doc.created_at), 'PPp', { locale: fr })}</p>
+          {doc.signe && doc.date_signature && (
+            <p className="text-green-600 font-medium">
+              ✓ Signé le {format(new Date(doc.date_signature), 'PPp', { locale: fr })}
+            </p>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => window.open(doc.file_url, '_blank')}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Télécharger
+          </Button>
+          
+          {!doc.signe && userRole === 'locataire' && (
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={() => setSigningDocument(doc.id)}
+            >
+              <PenTool className="h-4 w-4 mr-2" />
+              Signer
+            </Button>
+          )}
+
+          {userRole === 'gestionnaire' && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (confirm('Supprimer ce document ?')) {
+                  const path = doc.file_url.split('/documents/')[1];
+                  deleteDocument(doc.id, path);
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
@@ -93,7 +170,7 @@ const Documents = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold">Documents & Contrats</h1>
+            <h1 className="text-3xl font-bold">Documents Numériques</h1>
           </div>
           {userRole === 'gestionnaire' && selectedLeaseId && !showUpload && (
             <Button onClick={() => setShowUpload(true)}>
@@ -116,7 +193,8 @@ const Documents = () => {
               <SelectContent>
                 {userLeases.map((lease) => (
                   <SelectItem key={lease.id} value={lease.id}>
-                    Bail - {lease.montant_mensuel.toLocaleString()} FCFA/mois
+                    Bail - {lease.montant_mensuel.toLocaleString()} FCFA/mois - 
+                    {format(new Date(lease.date_debut), 'PP', { locale: fr })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -149,75 +227,86 @@ const Documents = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {documents.map((doc) => (
-                <Card key={doc.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg mb-2">{doc.titre}</CardTitle>
-                        <Badge className={getDocumentTypeBadge(doc.type_document)}>
-                          {getDocumentTypeLabel(doc.type_document)}
-                        </Badge>
-                      </div>
-                      {doc.signe && (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+            <>
+              {/* Filter */}
+              <Card className="mb-6">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    <Select value={filterType} onValueChange={setFilterType}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Filtrer par type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les documents</SelectItem>
+                        <SelectItem value="bail">Baux</SelectItem>
+                        <SelectItem value="quittance">Quittances</SelectItem>
+                        <SelectItem value="etat_lieux">États des lieux</SelectItem>
+                        <SelectItem value="autre">Autres</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <div className="text-sm text-muted-foreground">
-                      <p>{doc.file_name}</p>
-                      <p>{(doc.file_size / 1024 / 1024).toFixed(2)} MB</p>
-                      <p>Ajouté le {format(new Date(doc.created_at), 'PPp', { locale: fr })}</p>
-                      {doc.signe && doc.date_signature && (
-                        <p className="text-green-600">
-                          Signé le {format(new Date(doc.date_signature), 'PPp', { locale: fr })}
+                      {filteredDocuments.length} document(s)
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tabs for signed/unsigned */}
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="all">
+                    Tous ({filteredDocuments.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="unsigned">
+                    À signer ({unsignedDocuments.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="signed">
+                    Signés ({signedDocuments.length})
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="all" className="mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredDocuments.map(doc => <DocumentCard key={doc.id} doc={doc} />)}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="unsigned" className="mt-6">
+                  {unsignedDocuments.length === 0 ? (
+                    <Card>
+                      <CardContent className="flex flex-col items-center justify-center py-12">
+                        <CheckCircle className="h-16 w-16 text-green-600 mb-4" />
+                        <p className="text-muted-foreground text-center">
+                          Tous les documents sont signés !
                         </p>
-                      )}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {unsignedDocuments.map(doc => <DocumentCard key={doc.id} doc={doc} />)}
                     </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => window.open(doc.file_url, '_blank')}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Télécharger
-                      </Button>
-                      
-                      {!doc.signe && userRole === 'locataire' && (
-                        <Button
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => setSigningDocument(doc.id)}
-                        >
-                          <PenTool className="h-4 w-4 mr-2" />
-                          Signer
-                        </Button>
-                      )}
-
-                      {userRole === 'gestionnaire' && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            if (confirm('Supprimer ce document ?')) {
-                              const path = doc.file_url.split('/documents/')[1];
-                              deleteDocument(doc.id, path);
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="signed" className="mt-6">
+                  {signedDocuments.length === 0 ? (
+                    <Card>
+                      <CardContent className="flex flex-col items-center justify-center py-12">
+                        <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                        <p className="text-muted-foreground text-center">
+                          Aucun document signé
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {signedDocuments.map(doc => <DocumentCard key={doc.id} doc={doc} />)}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </>
           )
         ) : (
           <Card>

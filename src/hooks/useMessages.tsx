@@ -10,6 +10,9 @@ export interface Message {
   lu: boolean;
   created_at: string;
   sender_name?: string;
+  file_url?: string;
+  file_type?: string;
+  file_name?: string;
 }
 
 export const useMessages = (conversationId: string | null) => {
@@ -93,7 +96,12 @@ export const useMessages = (conversationId: string | null) => {
     };
   }, [fetchMessages, conversationId]);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (
+    content: string, 
+    fileUrl?: string, 
+    fileType?: string, 
+    fileName?: string
+  ) => {
     if (!conversationId) return;
 
     try {
@@ -105,7 +113,10 @@ export const useMessages = (conversationId: string | null) => {
         .insert([{
           conversation_id: conversationId,
           sender_id: user.id,
-          content
+          content,
+          file_url: fileUrl,
+          file_type: fileType,
+          file_name: fileName
         }]);
 
       if (error) throw error;
