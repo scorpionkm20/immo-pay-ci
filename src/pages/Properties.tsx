@@ -9,14 +9,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PropertyCard from '@/components/PropertyCard';
-import { Plus, Search, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { PropertiesMap } from '@/components/PropertiesMap';
+import { Plus, Search, SlidersHorizontal, ArrowUpDown, Grid3x3, Map } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Properties = () => {
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
   const { properties, loading } = useProperties();
+  
+  // View mode
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -299,93 +304,124 @@ const Properties = () => {
           </div>
         </div>
 
-        {/* Search Bar and Sort */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher par titre, adresse, ville, quartier..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <div className="flex gap-2">
-            {/* Sort Dropdown */}
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[200px]">
-                <ArrowUpDown className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Trier par" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date_desc">Plus récentes</SelectItem>
-                <SelectItem value="price_asc">Prix croissant</SelectItem>
-                <SelectItem value="price_desc">Prix décroissant</SelectItem>
-                <SelectItem value="surface_asc">Surface croissante</SelectItem>
-                <SelectItem value="surface_desc">Surface décroissante</SelectItem>
-                <SelectItem value="pieces_asc">Moins de pièces</SelectItem>
-                <SelectItem value="pieces_desc">Plus de pièces</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Search Bar, View Toggle and Sort */}
+        <div className="flex flex-col gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher par titre, adresse, ville, quartier..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              {/* View Toggle */}
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'grid' | 'map')}>
+                <TabsList>
+                  <TabsTrigger value="grid" className="gap-2">
+                    <Grid3x3 className="h-4 w-4" />
+                    Grille
+                  </TabsTrigger>
+                  <TabsTrigger value="map" className="gap-2">
+                    <Map className="h-4 w-4" />
+                    Carte
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-            {/* Mobile Filters Button */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="lg:hidden relative">
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  Filtres
-                  {activeFiltersCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                    >
-                      {activeFiltersCount}
-                    </Badge>
-                  )}
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-80 overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>Filtres de recherche</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6">
-                  <FiltersContent />
-                </div>
-              </SheetContent>
-            </Sheet>
+              {/* Sort Dropdown */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[200px]">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Trier par" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date_desc">Plus récentes</SelectItem>
+                  <SelectItem value="price_asc">Prix croissant</SelectItem>
+                  <SelectItem value="price_desc">Prix décroissant</SelectItem>
+                  <SelectItem value="surface_asc">Surface croissante</SelectItem>
+                  <SelectItem value="surface_desc">Surface décroissante</SelectItem>
+                  <SelectItem value="pieces_asc">Moins de pièces</SelectItem>
+                  <SelectItem value="pieces_desc">Plus de pièces</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Mobile Filters Button */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="lg:hidden relative">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    Filtres
+                    {activeFiltersCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                      >
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>Filtres de recherche</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <FiltersContent />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
 
         <div className="flex gap-6">
           {/* Desktop Filters Sidebar */}
-          <aside className="hidden lg:block w-80 shrink-0">
-            <div className="sticky top-4 bg-card border rounded-lg p-6">
-              <h2 className="text-lg font-semibold mb-4">Filtres de recherche</h2>
-              <FiltersContent />
-            </div>
-          </aside>
-
-          {/* Properties Grid */}
-          <div className="flex-1">
-            {filteredAndSortedProperties.length === 0 ? (
-              <div className="text-center py-16">
-                <Search className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg font-medium mb-2">Aucune propriété trouvée</p>
-                <p className="text-muted-foreground mb-4">
-                  Essayez de modifier vos critères de recherche
-                </p>
-                {activeFiltersCount > 0 && (
-                  <Button onClick={resetFilters} variant="outline">
-                    Réinitialiser les filtres
-                  </Button>
-                )}
+          {viewMode === 'grid' && (
+            <aside className="hidden lg:block w-80 shrink-0">
+              <div className="sticky top-4 bg-card border rounded-lg p-6">
+                <h2 className="text-lg font-semibold mb-4">Filtres de recherche</h2>
+                <FiltersContent />
               </div>
+            </aside>
+          )}
+
+          {/* Content Area */}
+          <div className="flex-1">
+            {viewMode === 'grid' ? (
+              // Grid View
+              filteredAndSortedProperties.length === 0 ? (
+                <div className="text-center py-16">
+                  <Search className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-lg font-medium mb-2">Aucune propriété trouvée</p>
+                  <p className="text-muted-foreground mb-4">
+                    Essayez de modifier vos critères de recherche
+                  </p>
+                  {activeFiltersCount > 0 && (
+                    <Button onClick={resetFilters} variant="outline">
+                      Réinitialiser les filtres
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredAndSortedProperties.map((property) => (
+                    <PropertyCard key={property.id} property={property} />
+                  ))}
+                </div>
+              )
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredAndSortedProperties.map((property) => (
-                  <PropertyCard key={property.id} property={property} />
-                ))}
+              // Map View
+              <div className="h-[calc(100vh-16rem)] rounded-lg overflow-hidden border">
+                <PropertiesMap 
+                  properties={filteredAndSortedProperties}
+                  onPropertyClick={(property) => {
+                    console.log('Property clicked:', property);
+                  }}
+                />
               </div>
             )}
           </div>

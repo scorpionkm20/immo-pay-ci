@@ -19,6 +19,8 @@ export interface Property {
   statut: 'disponible' | 'loue' | 'en_attente_validation' | 'indisponible';
   images: string[];
   equipements: string[];
+  latitude: number | null;
+  longitude: number | null;
   date_publication: string;
   validation_proprietaire: boolean;
 }
