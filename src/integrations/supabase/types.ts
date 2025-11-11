@@ -151,6 +151,91 @@ export type Database = {
           },
         ]
       }
+      maintenance_interventions: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          intervenant_id: string
+          statut_apres: Database["public"]["Enums"]["ticket_status"] | null
+          statut_avant: Database["public"]["Enums"]["ticket_status"] | null
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          intervenant_id: string
+          statut_apres?: Database["public"]["Enums"]["ticket_status"] | null
+          statut_avant?: Database["public"]["Enums"]["ticket_status"] | null
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          intervenant_id?: string
+          statut_apres?: Database["public"]["Enums"]["ticket_status"] | null
+          statut_avant?: Database["public"]["Enums"]["ticket_status"] | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_interventions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_tickets: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          lease_id: string
+          photos: string[] | null
+          priorite: Database["public"]["Enums"]["ticket_priority"]
+          statut: Database["public"]["Enums"]["ticket_status"]
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          lease_id: string
+          photos?: string[] | null
+          priorite?: Database["public"]["Enums"]["ticket_priority"]
+          statut?: Database["public"]["Enums"]["ticket_status"]
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          lease_id?: string
+          photos?: string[] | null
+          priorite?: Database["public"]["Enums"]["ticket_priority"]
+          statut?: Database["public"]["Enums"]["ticket_status"]
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_tickets_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -410,6 +495,8 @@ export type Database = {
         | "loue"
         | "en_attente_validation"
         | "indisponible"
+      ticket_priority: "faible" | "moyenne" | "haute" | "urgente"
+      ticket_status: "ouvert" | "en_cours" | "resolu" | "ferme"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -544,6 +631,8 @@ export const Constants = {
         "en_attente_validation",
         "indisponible",
       ],
+      ticket_priority: ["faible", "moyenne", "haute", "urgente"],
+      ticket_status: ["ouvert", "en_cours", "resolu", "ferme"],
     },
   },
 } as const

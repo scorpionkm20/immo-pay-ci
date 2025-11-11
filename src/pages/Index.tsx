@@ -5,7 +5,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell } from 'lucide-react';
+import { Bell, Wrench } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -107,6 +107,10 @@ const Index = () => {
                 </Button>
                 <Button onClick={() => navigate('/documents')} variant="outline" className="w-full">
                   Documents & Contrats
+                </Button>
+                <Button onClick={() => navigate('/maintenance')} variant="outline" className="w-full">
+                  <Wrench className="mr-2 h-4 w-4" />
+                  Maintenance
                 </Button>
               </>
             )}

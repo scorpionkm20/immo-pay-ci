@@ -17,6 +17,7 @@ import Notifications from "./pages/Notifications";
 import Dashboard from "./pages/Dashboard";
 import Messages from "./pages/Messages";
 import Documents from "./pages/Documents";
+import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/documents" element={<Documents />} />
+            <Route path="/maintenance" element={<Maintenance />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

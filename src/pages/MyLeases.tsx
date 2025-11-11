@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home, Calendar, DollarSign, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { ArrowLeft, Home, Calendar, DollarSign, CheckCircle, XCircle, FileText, Wrench } from 'lucide-react';
 
 interface LeaseWithProperty extends Lease {
   property?: {
@@ -203,7 +203,6 @@ const MyLeases = () => {
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"
@@ -219,6 +218,14 @@ const MyLeases = () => {
                     >
                       <FileText className="h-4 w-4 mr-2" />
                       Documents
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/maintenance?lease=${lease.id}`)}
+                    >
+                      <Wrench className="h-4 w-4 mr-2" />
+                      Maintenance
                     </Button>
                     {userRole === 'locataire' && lease.statut === 'actif' && (
                       <Button size="sm" onClick={() => navigate('/payments')}>
