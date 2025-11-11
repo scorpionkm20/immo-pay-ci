@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Property } from '@/hooks/useProperties';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
+import { FavoriteButton } from '@/components/FavoriteButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X, MapPin, Home, Maximize2 } from 'lucide-react';
@@ -280,14 +281,19 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
       {selectedProperty && (
         <Card className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 w-80 max-w-[calc(100vw-2rem)]">
           <CardContent className="p-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2"
-              onClick={() => setSelectedProperty(null)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="absolute top-2 right-2 flex gap-1">
+              <FavoriteButton 
+                property={selectedProperty}
+                className="bg-white/90 backdrop-blur-sm hover:bg-white"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedProperty(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
             
             <div className="space-y-3">
               {selectedProperty.images?.[0] && (

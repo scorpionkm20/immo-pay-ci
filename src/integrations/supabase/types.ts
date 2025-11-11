@@ -511,6 +511,44 @@ export type Database = {
         }
         Relationships: []
       }
+      property_favorites: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          prix_initial: number
+          property_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          prix_initial: number
+          property_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          prix_initial?: number
+          property_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_favorites_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       search_alerts: {
         Row: {
           actif: boolean | null

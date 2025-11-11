@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Home, Square, Euro } from 'lucide-react';
 import { Property } from '@/hooks/useProperties';
 import { useNavigate } from 'react-router-dom';
+import { FavoriteButton } from '@/components/FavoriteButton';
 
 interface PropertyCardProps {
   property: Property;
@@ -35,13 +36,19 @@ const PropertyCard = ({ property, showActions = false, onEdit, onDelete }: Prope
     : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400';
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow group">
       <div className="relative h-48 w-full overflow-hidden">
         <img 
           src={mainImage} 
           alt={property.titre}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
+        <div className="absolute top-2 left-2">
+          <FavoriteButton 
+            property={property}
+            className="bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg"
+          />
+        </div>
         <div className="absolute top-2 right-2">
           {getStatusBadge(property.statut)}
         </div>

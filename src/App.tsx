@@ -23,6 +23,8 @@ import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
 import NotificationSettings from "./pages/NotificationSettings";
 import SearchAlerts from "./pages/SearchAlerts";
+import Favorites from "./pages/Favorites";
+import FavoritesCompare from "./pages/FavoritesCompare";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,8 @@ const App = () => (
             <Route path="/documents" element={<Documents />} />
             <Route path="/maintenance" element={<Maintenance />} />
             <Route path="/search-alerts" element={<SearchAlerts />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/favorites/compare" element={<FavoritesCompare />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
