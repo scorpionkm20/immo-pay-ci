@@ -98,9 +98,14 @@ const Index = () => {
               </>
             )}
             {(userRole === 'locataire' || userRole === 'gestionnaire') && (
-              <Button onClick={() => navigate('/my-leases')} variant="outline" className="w-full">
-                Mes baux
-              </Button>
+              <>
+                <Button onClick={() => navigate('/my-leases')} variant="outline" className="w-full">
+                  Mes baux
+                </Button>
+                <Button onClick={() => navigate('/messages')} variant="outline" className="w-full">
+                  Messagerie
+                </Button>
+              </>
             )}
             {userRole === 'locataire' && (
               <Button onClick={() => navigate('/payments')} className="w-full">

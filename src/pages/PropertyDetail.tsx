@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, MapPin, Home, Square, Euro } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { StartConversationButton } from '@/components/StartConversationButton';
 
 const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -190,10 +191,25 @@ const PropertyDetail = () => {
 
               {/* Actions */}
               {property.statut === 'disponible' && user && userRole === 'locataire' && (
-                <div className="pt-6 border-t">
+                <div className="pt-6 border-t space-y-3">
                   <Button size="lg" className="w-full">
                     Payer la caution et réserver
                   </Button>
+                  <StartConversationButton
+                    propertyId={property.id}
+                    gestionnaireId={property.gestionnaire_id}
+                    className="w-full"
+                  />
+                </div>
+              )}
+              
+              {user && userRole === 'locataire' && property.statut !== 'disponible' && (
+                <div className="pt-6 border-t">
+                  <StartConversationButton
+                    propertyId={property.id}
+                    gestionnaireId={property.gestionnaire_id}
+                    className="w-full"
+                  />
                 </div>
               )}
             </div>

@@ -1,0 +1,155 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  lu: boolean;
+  created_at: string;
+  sender_name?: string;
+}
+
+export const useMessages = (conversationId: string | null) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchMessages = async () => {
+    if (!conversationId) {
+      setMessages([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Enrich messages with sender names
+      const enrichedMessages = await Promise.all(
+        (data || []).map(async (msg) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('user_id', msg.sender_id)
+            .single();
+
+          return {
+            ...msg,
+            sender_name: profile?.full_name || 'Utilisateur'
+          };
+        })
+      );
+
+      setMessages(enrichedMessages);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger les messages"
+      });
+      console.error('Error fetching messages:', error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchMessages();
+
+    if (!conversationId) return;
+
+    // Set up realtime subscription
+    const channel = supabase
+      .channel(`messages-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        async (payload) => {
+          const newMessage = payload.new as Message;
+          
+          // Get sender name
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('user_id', newMessage.sender_id)
+            .single();
+
+          setMessages(prev => [...prev, {
+            ...newMessage,
+            sender_name: profile?.full_name || 'Utilisateur'
+          }]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId]);
+
+  const sendMessage = async (content: string) => {
+    if (!conversationId) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('messages')
+        .insert([{
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content
+        }]);
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'envoyer le message"
+      });
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const markAsRead = async () => {
+    if (!conversationId) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('messages')
+        .update({ lu: true })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', user.id)
+        .eq('lu', false);
+    } catch (error: any) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
+  return {
+    messages,
+    loading,
+    sendMessage,
+    markAsRead,
+    refetch: fetchMessages
+  };
+};

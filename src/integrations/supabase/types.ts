@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversations: {
+        Row: {
+          created_at: string
+          dernier_message: string | null
+          dernier_message_date: string | null
+          gestionnaire_id: string
+          id: string
+          locataire_id: string
+          property_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dernier_message?: string | null
+          dernier_message_date?: string | null
+          gestionnaire_id: string
+          id?: string
+          locataire_id: string
+          property_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dernier_message?: string | null
+          dernier_message_date?: string | null
+          gestionnaire_id?: string
+          id?: string
+          locataire_id?: string
+          property_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leases: {
         Row: {
           caution_montant: number
@@ -69,6 +102,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          lu: boolean
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          lu?: boolean
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          lu?: boolean
+          sender_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
