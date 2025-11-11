@@ -1,12 +1,16 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bell } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, userRole, loading } = useAuth();
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -40,12 +44,32 @@ const Index = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">
-            Tableau de bord
-          </CardTitle>
-          <CardDescription>
-            Bienvenue dans votre espace {getRoleDisplay(userRole)}
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-3xl font-bold">
+                Tableau de bord
+              </CardTitle>
+              <CardDescription>
+                Bienvenue dans votre espace {getRoleDisplay(userRole)}
+              </CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="relative"
+              onClick={() => navigate('/notifications')}
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                >
+                  {unreadCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-lg border bg-card p-6">
