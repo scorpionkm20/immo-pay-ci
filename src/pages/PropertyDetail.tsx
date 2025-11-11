@@ -1,38 +1,184 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Property } from '@/hooks/useProperties';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MapPin, Home, Square, Euro } from 'lucide-react';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { StartConversationButton } from '@/components/StartConversationButton';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
+import { 
+  ArrowLeft, 
+  MapPin, 
+  Home, 
+  Maximize2, 
+  MessageSquare, 
+  Euro,
+  BedDouble,
+  X,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 const PropertyDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { user, userRole } = useAuth();
-  const [property, setProperty] = useState<Property | null>(null);
+  const { user } = useAuth();
+  const [property, setProperty] = useState<any>(null);
+  const [gestionnaire, setGestionnaire] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
-    const fetchProperty = async () => {
-      const { data, error } = await supabase
+    fetchPropertyDetails();
+  }, [id]);
+
+  useEffect(() => {
+    if (property?.latitude && property?.longitude && mapContainer.current && !map.current) {
+      initializeMap();
+    }
+  }, [property]);
+
+  const initializeMap = async () => {
+    if (!property?.latitude || !property?.longitude || !mapContainer.current) return;
+
+    try {
+      const { data: secrets } = await supabase.functions.invoke('get-mapbox-token');
+      const token = secrets?.token || import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
+      
+      mapboxgl.accessToken = token;
+
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [property.longitude, property.latitude],
+        zoom: 14
+      });
+
+      // Add marker
+      new mapboxgl.Marker({ color: '#2B8A3E' })
+        .setLngLat([property.longitude, property.latitude])
+        .setPopup(
+          new mapboxgl.Popup().setHTML(`<h3 class="font-semibold">${property.titre}</h3>`)
+        )
+        .addTo(map.current);
+
+      // Add navigation controls
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
+  };
+
+  const fetchPropertyDetails = async () => {
+    try {
+      const { data: propertyData, error: propertyError } = await supabase
         .from('properties')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (data) {
-        setProperty(data);
-      }
-      setLoading(false);
-    };
+      if (propertyError) throw propertyError;
+      setProperty(propertyData);
 
-    fetchProperty();
-  }, [id]);
+      // Fetch gestionnaire profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', propertyData.gestionnaire_id)
+        .single();
+
+      setGestionnaire(profileData);
+    } catch (error: any) {
+      console.error('Error fetching property:', error);
+      toast.error('Erreur lors du chargement des détails');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error('Vous devez être connecté pour contacter le gestionnaire');
+      navigate('/auth');
+      return;
+    }
+
+    if (!message.trim()) {
+      toast.error('Veuillez saisir un message');
+      return;
+    }
+
+    setSending(true);
+    try {
+      // Check if conversation exists
+      const { data: existingConversation } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('property_id', id)
+        .eq('locataire_id', user.id)
+        .eq('gestionnaire_id', property.gestionnaire_id)
+        .maybeSingle();
+
+      let conversationId = existingConversation?.id;
+
+      // Create conversation if doesn't exist
+      if (!conversationId) {
+        const { data: newConversation, error: convError } = await supabase
+          .from('conversations')
+          .insert({
+            property_id: id,
+            locataire_id: user.id,
+            gestionnaire_id: property.gestionnaire_id
+          })
+          .select()
+          .single();
+
+        if (convError) throw convError;
+        conversationId = newConversation.id;
+      }
+
+      // Send message
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: message
+        });
+
+      if (messageError) throw messageError;
+
+      toast.success('Message envoyé avec succès');
+      setMessage('');
+      navigate('/messages');
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      toast.error('Erreur lors de l\'envoi du message');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const nextImage = () => {
+    if (selectedImage !== null && property.images) {
+      setSelectedImage((selectedImage + 1) % property.images.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (selectedImage !== null && property.images) {
+      setSelectedImage(selectedImage === 0 ? property.images.length - 1 : selectedImage - 1);
+    }
+  };
 
   if (loading) {
     return (
@@ -45,176 +191,277 @@ const PropertyDetail = () => {
   if (!property) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Propriété non trouvée</p>
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground mb-4">Propriété introuvable</p>
+          <Button onClick={() => navigate('/properties')}>
+            Retour aux annonces
+          </Button>
+        </div>
       </div>
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'disponible':
-        return <Badge className="bg-green-600">Disponible</Badge>;
-      case 'loue':
-        return <Badge variant="secondary">Loué</Badge>;
-      case 'en_attente_validation':
-        return <Badge variant="outline">En attente</Badge>;
-      case 'indisponible':
-        return <Badge variant="destructive">Indisponible</Badge>;
-    }
-  };
-
-  const images = property.images && property.images.length > 0 
-    ? property.images 
-    : ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'];
-
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container max-w-5xl mx-auto px-4">
-        <Button variant="ghost" onClick={() => navigate('/properties')} className="mb-4">
+    <div className="min-h-screen bg-background">
+      {/* Fullscreen Image Viewer */}
+      {selectedImage !== null && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center">
+          <button
+            onClick={() => setSelectedImage(null)}
+            className="absolute top-4 right-4 text-white hover:text-primary transition-colors"
+          >
+            <X className="h-8 w-8" />
+          </button>
+          
+          <button
+            onClick={prevImage}
+            className="absolute left-4 text-white hover:text-primary transition-colors"
+          >
+            <ChevronLeft className="h-12 w-12" />
+          </button>
+          
+          <img
+            src={property.images[selectedImage]}
+            alt={`${property.titre} - Image ${selectedImage + 1}`}
+            className="max-h-[90vh] max-w-[90vw] object-contain"
+          />
+          
+          <button
+            onClick={nextImage}
+            className="absolute right-4 text-white hover:text-primary transition-colors"
+          >
+            <ChevronRight className="h-12 w-12" />
+          </button>
+          
+          <div className="absolute bottom-4 text-white text-sm">
+            {selectedImage + 1} / {property.images.length}
+          </div>
+        </div>
+      )}
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/properties')}
+          className="mb-6"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Retour aux annonces
         </Button>
 
-        <Card>
-          <CardContent className="p-0">
-            {/* Image Carousel */}
-            <Carousel className="w-full">
-              <CarouselContent>
-                {images.map((image, index) => (
-                  <CarouselItem key={index}>
-                    <div className="relative h-96 w-full">
-                      <img
-                        src={image}
-                        alt={`${property.titre} - ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              {images.length > 1 && (
-                <>
-                  <CarouselPrevious className="left-4" />
-                  <CarouselNext className="right-4" />
-                </>
-              )}
-            </Carousel>
-
-            {/* Property Info */}
-            <div className="p-6 space-y-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">{property.titre}</h1>
-                  <p className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    {property.adresse}, {property.quartier ? `${property.quartier}, ` : ''}{property.ville}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-bold text-primary mb-2">
-                    {property.prix_mensuel.toLocaleString()} FCFA
-                    <span className="text-sm text-muted-foreground">/mois</span>
-                  </p>
-                  {getStatusBadge(property.statut)}
+        {/* Image Gallery */}
+        <div className="grid grid-cols-4 gap-2 mb-8">
+          {property.images && property.images.length > 0 ? (
+            <>
+              <div
+                className="col-span-4 md:col-span-3 row-span-2 relative cursor-pointer group overflow-hidden rounded-lg"
+                onClick={() => setSelectedImage(0)}
+              >
+                <img
+                  src={property.images[0]}
+                  alt={property.titre}
+                  className="w-full h-[400px] object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <Maximize2 className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
-
-              {/* Key Features */}
-              <div className="grid grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-2">
-                    <Home className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Type</p>
-                      <p className="font-semibold capitalize">{property.type_propriete}</p>
+              
+              {property.images.slice(1, 5).map((image: string, index: number) => (
+                <div
+                  key={index}
+                  className="relative cursor-pointer group overflow-hidden rounded-lg"
+                  onClick={() => setSelectedImage(index + 1)}
+                >
+                  <img
+                    src={image}
+                    alt={`${property.titre} - ${index + 2}`}
+                    className="w-full h-[196px] object-cover transition-transform group-hover:scale-105"
+                  />
+                  {index === 3 && property.images.length > 5 && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-semibold text-xl">
+                      +{property.images.length - 5}
                     </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-2">
-                    <Home className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="col-span-4 h-[400px] bg-muted rounded-lg flex items-center justify-center">
+              <Home className="h-16 w-16 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Title and Price */}
+            <div>
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">{property.titre}</h1>
+                  <div className="flex items-center text-muted-foreground mb-2">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {property.adresse}, {property.quartier}, {property.ville}
+                  </div>
+                </div>
+                <Badge
+                  variant={property.statut === 'disponible' ? 'default' : 'secondary'}
+                  className="text-lg px-4 py-2"
+                >
+                  {property.statut === 'disponible' ? 'Disponible' : 'Loué'}
+                </Badge>
+              </div>
+
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-primary">
+                  {property.prix_mensuel.toLocaleString()} FCFA
+                </span>
+                <span className="text-muted-foreground">/mois</span>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Property Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Caractéristiques</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <BedDouble className="h-5 w-5 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Pièces</p>
                       <p className="font-semibold">{property.nombre_pieces}</p>
                     </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-2">
-                    <Square className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Maximize2 className="h-5 w-5 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Surface</p>
                       <p className="font-semibold">{property.surface_m2 || 'N/A'} m²</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Description */}
-              <div>
-                <h2 className="text-xl font-semibold mb-3">Description</h2>
-                <p className="text-muted-foreground whitespace-pre-line">{property.description}</p>
-              </div>
-
-              {/* Financial Info */}
-              <div>
-                <h2 className="text-xl font-semibold mb-3">Informations financières</h2>
-                <div className="grid grid-cols-2 gap-4">
+                  </div>
                   <div className="flex items-center gap-2">
-                    <Euro className="h-5 w-5 text-muted-foreground" />
+                    <Home className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Loyer mensuel</p>
-                      <p className="font-semibold">{property.prix_mensuel.toLocaleString()} FCFA</p>
+                      <p className="text-sm text-muted-foreground">Type</p>
+                      <p className="font-semibold">{property.type_propriete}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Euro className="h-5 w-5 text-muted-foreground" />
+                    <Euro className="h-5 w-5 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Caution</p>
                       <p className="font-semibold">{property.caution.toLocaleString()} FCFA</p>
                     </div>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Equipements */}
-              {property.equipements && property.equipements.length > 0 && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-3">Équipements</h2>
+            {/* Description */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground whitespace-pre-line">{property.description}</p>
+              </CardContent>
+            </Card>
+
+            {/* Équipements */}
+            {property.equipements && property.equipements.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Équipements</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {property.equipements.map((equipement, index) => (
-                      <Badge key={index} variant="outline">{equipement}</Badge>
+                    {property.equipements.map((equipement: string, index: number) => (
+                      <Badge key={index} variant="secondary">
+                        {equipement}
+                      </Badge>
                     ))}
                   </div>
-                </div>
-              )}
+                </CardContent>
+              </Card>
+            )}
 
-              {/* Actions */}
-              {property.statut === 'disponible' && user && userRole === 'locataire' && (
-                <div className="pt-6 border-t space-y-3">
-                  <Button size="lg" className="w-full">
-                    Payer la caution et réserver
+            {/* Map */}
+            {property.latitude && property.longitude && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Localisation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div
+                    ref={mapContainer}
+                    className="w-full h-[400px] rounded-lg"
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Sidebar - Contact Form */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Contacter le gestionnaire
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {gestionnaire && (
+                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                    <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-lg">
+                      {gestionnaire.full_name?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-semibold">{gestionnaire.full_name}</p>
+                      <p className="text-sm text-muted-foreground">Gestionnaire</p>
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleContactSubmit} className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Votre message
+                    </label>
+                    <Textarea
+                      placeholder="Bonjour, je suis intéressé par cette propriété..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={6}
+                      className="resize-none"
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={sending || !message.trim()}
+                  >
+                    {sending ? 'Envoi...' : 'Envoyer le message'}
                   </Button>
-                  <StartConversationButton
-                    propertyId={property.id}
-                    gestionnaireId={property.gestionnaire_id}
-                    className="w-full"
-                  />
-                </div>
-              )}
-              
-              {user && userRole === 'locataire' && property.statut !== 'disponible' && (
-                <div className="pt-6 border-t">
-                  <StartConversationButton
-                    propertyId={property.id}
-                    gestionnaireId={property.gestionnaire_id}
-                    className="w-full"
-                  />
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
+                  {!user && (
+                    <p className="text-xs text-center text-muted-foreground">
+                      Vous devez être connecté pour envoyer un message
+                    </p>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
