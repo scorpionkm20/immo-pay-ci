@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
 import {
   DropdownMenu,
@@ -131,12 +131,18 @@ export const NotificationDropdown = () => {
         </Tabs>
 
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="justify-center text-primary cursor-pointer"
-          onClick={() => navigate('/notifications')}
-        >
-          Voir toutes les notifications
-        </DropdownMenuItem>
+        <div className="p-2 space-y-1">
+          <DropdownMenuItem asChild>
+            <Link to="/notifications" className="w-full justify-center cursor-pointer">
+              Voir toutes les notifications
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/notification-settings" className="w-full justify-center cursor-pointer text-muted-foreground">
+              Gérer les préférences
+            </Link>
+          </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

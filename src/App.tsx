@@ -21,6 +21,7 @@ import Messages from "./pages/Messages";
 import Documents from "./pages/Documents";
 import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
+import NotificationSettings from "./pages/NotificationSettings";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/payments" element={<Payments />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/notification-settings" element={<NotificationSettings />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/documents" element={<Documents />} />

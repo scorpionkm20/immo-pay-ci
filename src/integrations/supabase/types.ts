@@ -272,6 +272,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          document_a_signer: boolean | null
+          id: string
+          mise_a_jour_ticket: boolean | null
+          nouveau_message: boolean | null
+          nouveau_ticket: boolean | null
+          paiement_recu: boolean | null
+          rappel_paiement: boolean | null
+          retard_paiement: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          document_a_signer?: boolean | null
+          id?: string
+          mise_a_jour_ticket?: boolean | null
+          nouveau_message?: boolean | null
+          nouveau_ticket?: boolean | null
+          paiement_recu?: boolean | null
+          rappel_paiement?: boolean | null
+          retard_paiement?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          document_a_signer?: boolean | null
+          id?: string
+          mise_a_jour_ticket?: boolean | null
+          nouveau_message?: boolean | null
+          nouveau_ticket?: boolean | null
+          paiement_recu?: boolean | null
+          rappel_paiement?: boolean | null
+          retard_paiement?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -606,6 +648,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      should_notify: {
+        Args: { notif_type: string; user_uuid: string }
         Returns: boolean
       }
     }

@@ -44,7 +44,25 @@ export const useNotifications = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications'
+        },
+        (payload) => {
+          const newNotif = payload.new as Notification;
+          if (!newNotif.lu) {
+            toast({
+              title: newNotif.titre,
+              description: newNotif.message,
+            });
+          }
+          fetchNotifications();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
           schema: 'public',
           table: 'notifications'
         },
@@ -57,7 +75,7 @@ export const useNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, toast]);
 
   const markAsRead = async (id: string) => {
     const { error } = await supabase
