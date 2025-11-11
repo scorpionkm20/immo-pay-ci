@@ -132,12 +132,20 @@ const PropertyDetail = () => {
 
       // Create conversation if doesn't exist
       if (!conversationId) {
+        // Get space_id from the property
+        const { data: propertyData } = await supabase
+          .from('properties')
+          .select('space_id')
+          .eq('id', id)
+          .single();
+
         const { data: newConversation, error: convError } = await supabase
           .from('conversations')
           .insert({
             property_id: id,
             locataire_id: user.id,
-            gestionnaire_id: property.gestionnaire_id
+            gestionnaire_id: property.gestionnaire_id,
+            space_id: propertyData?.space_id
           })
           .select()
           .single();

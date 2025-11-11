@@ -69,11 +69,19 @@ export const useMaintenanceTickets = (leaseId?: string) => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
+      // Get space_id from the lease
+      const { data: lease } = await supabase
+        .from('leases')
+        .select('space_id')
+        .eq('id', leaseId)
+        .single();
+
       // Create ticket first
       const { data: ticket, error: ticketError } = await supabase
         .from("maintenance_tickets")
         .insert({
           lease_id: leaseId,
+          space_id: lease?.space_id,
           created_by: user.id,
           titre,
           description,

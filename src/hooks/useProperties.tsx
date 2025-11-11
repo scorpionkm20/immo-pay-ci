@@ -74,6 +74,20 @@ export const useProperties = () => {
   }, []);
 
   const createProperty = async (propertyData: any) => {
+    // Ensure space_id is included
+    if (!propertyData.space_id) {
+      const spaceId = localStorage.getItem('currentSpaceId');
+      if (!spaceId) {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Aucun espace de gestion sélectionné"
+        });
+        return { data: null, error: new Error("No space selected") };
+      }
+      propertyData.space_id = spaceId;
+    }
+
     const { data, error } = await supabase
       .from('properties')
       .insert([propertyData])

@@ -76,10 +76,18 @@ export const useLeases = () => {
     caution_montant: number;
     caution_payee: boolean;
   }) => {
+    // Get space_id from the property
+    const { data: property } = await supabase
+      .from('properties')
+      .select('space_id')
+      .eq('id', leaseData.property_id)
+      .single();
+
     const { data, error } = await supabase
       .from('leases')
       .insert([{
         ...leaseData,
+        space_id: property?.space_id,
         statut: 'actif'
       }])
       .select()

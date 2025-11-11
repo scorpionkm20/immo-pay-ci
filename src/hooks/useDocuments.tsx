@@ -59,6 +59,13 @@ export const useDocuments = (leaseId?: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
 
+      // Get space_id from the lease
+      const { data: lease } = await supabase
+        .from('leases')
+        .select('space_id')
+        .eq('id', leaseId)
+        .single();
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${leaseId}/${fileName}`;
@@ -80,6 +87,7 @@ export const useDocuments = (leaseId?: string) => {
         .from('documents')
         .insert([{
           lease_id: leaseId,
+          space_id: lease?.space_id,
           titre,
           type_document: typeDocument,
           file_url: publicUrl,

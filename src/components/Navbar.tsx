@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Building2, LogOut, User, Home } from 'lucide-react';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
+import { SpaceSelector } from '@/components/SpaceSelector';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -64,6 +65,10 @@ export const Navbar = () => {
         <div className="flex items-center gap-4">
           {user ? (
             <>
+              <div className="hidden md:block w-64">
+                <SpaceSelector />
+              </div>
+              
               <Button
                 variant="ghost"
                 size="sm"

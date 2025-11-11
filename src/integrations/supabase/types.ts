@@ -23,6 +23,7 @@ export type Database = {
           id: string
           locataire_id: string
           property_id: string
+          space_id: string
           updated_at: string
         }
         Insert: {
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           locataire_id: string
           property_id: string
+          space_id: string
           updated_at?: string
         }
         Update: {
@@ -43,9 +45,18 @@ export type Database = {
           id?: string
           locataire_id?: string
           property_id?: string
+          space_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents: {
         Row: {
@@ -58,6 +69,7 @@ export type Database = {
           lease_id: string
           signature_url: string | null
           signe: boolean
+          space_id: string
           titre: string
           type_document: string
           updated_at: string
@@ -73,6 +85,7 @@ export type Database = {
           lease_id: string
           signature_url?: string | null
           signe?: boolean
+          space_id: string
           titre: string
           type_document: string
           updated_at?: string
@@ -88,12 +101,21 @@ export type Database = {
           lease_id?: string
           signature_url?: string | null
           signe?: boolean
+          space_id?: string
           titre?: string
           type_document?: string
           updated_at?: string
           uploaded_by?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "documents_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leases: {
         Row: {
@@ -108,6 +130,7 @@ export type Database = {
           locataire_id: string
           montant_mensuel: number
           property_id: string
+          space_id: string
           statut: string
           updated_at: string
         }
@@ -123,6 +146,7 @@ export type Database = {
           locataire_id: string
           montant_mensuel: number
           property_id: string
+          space_id: string
           statut?: string
           updated_at?: string
         }
@@ -138,6 +162,7 @@ export type Database = {
           locataire_id?: string
           montant_mensuel?: number
           property_id?: string
+          space_id?: string
           statut?: string
           updated_at?: string
         }
@@ -147,6 +172,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leases_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -198,6 +230,7 @@ export type Database = {
           lease_id: string
           photos: string[] | null
           priorite: Database["public"]["Enums"]["ticket_priority"]
+          space_id: string
           statut: Database["public"]["Enums"]["ticket_status"]
           titre: string
           updated_at: string
@@ -210,6 +243,7 @@ export type Database = {
           lease_id: string
           photos?: string[] | null
           priorite?: Database["public"]["Enums"]["ticket_priority"]
+          space_id: string
           statut?: Database["public"]["Enums"]["ticket_status"]
           titre: string
           updated_at?: string
@@ -222,6 +256,7 @@ export type Database = {
           lease_id?: string
           photos?: string[] | null
           priorite?: Database["public"]["Enums"]["ticket_priority"]
+          space_id?: string
           statut?: Database["public"]["Enums"]["ticket_status"]
           titre?: string
           updated_at?: string
@@ -234,7 +269,41 @@ export type Database = {
             referencedRelation: "leases"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "maintenance_tickets_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      management_spaces: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          nom?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {
@@ -361,6 +430,7 @@ export type Database = {
           montant: number
           numero_telephone: string
           recu_url: string | null
+          space_id: string
           statut: string
           transaction_id: string | null
           updated_at: string
@@ -375,6 +445,7 @@ export type Database = {
           montant: number
           numero_telephone: string
           recu_url?: string | null
+          space_id: string
           statut?: string
           transaction_id?: string | null
           updated_at?: string
@@ -389,6 +460,7 @@ export type Database = {
           montant?: number
           numero_telephone?: string
           recu_url?: string | null
+          space_id?: string
           statut?: string
           transaction_id?: string | null
           updated_at?: string
@@ -399,6 +471,13 @@ export type Database = {
             columns: ["lease_id"]
             isOneToOne: false
             referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -451,6 +530,7 @@ export type Database = {
           prix_mensuel: number
           proprietaire_id: string | null
           quartier: string | null
+          space_id: string
           statut: Database["public"]["Enums"]["property_status"]
           surface_m2: number | null
           titre: string
@@ -476,6 +556,7 @@ export type Database = {
           prix_mensuel: number
           proprietaire_id?: string | null
           quartier?: string | null
+          space_id: string
           statut?: Database["public"]["Enums"]["property_status"]
           surface_m2?: number | null
           titre: string
@@ -501,6 +582,7 @@ export type Database = {
           prix_mensuel?: number
           proprietaire_id?: string | null
           quartier?: string | null
+          space_id?: string
           statut?: Database["public"]["Enums"]["property_status"]
           surface_m2?: number | null
           titre?: string
@@ -509,7 +591,15 @@ export type Database = {
           validation_proprietaire?: boolean | null
           ville?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_favorites: {
         Row: {
@@ -617,6 +707,38 @@ export type Database = {
           ville?: string | null
         }
         Relationships: []
+      }
+      space_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          space_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          space_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          space_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_members_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tour_appointments: {
         Row: {
@@ -750,6 +872,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_spaces: {
+        Args: { _user_id: string }
+        Returns: {
+          space_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -757,6 +885,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_space_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _space_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_space_member: {
+        Args: { _space_id: string; _user_id: string }
+        Returns: boolean
+      }
+      migrate_to_spaces: { Args: never; Returns: undefined }
       property_matches_alert: {
         Args: {
           alert_record: Database["public"]["Tables"]["search_alerts"]["Row"]

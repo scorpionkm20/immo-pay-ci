@@ -118,13 +118,21 @@ export const useConversations = () => {
         return { data: existing, error: null };
       }
 
+      // Get space_id from the property
+      const { data: property } = await supabase
+        .from('properties')
+        .select('space_id')
+        .eq('id', propertyId)
+        .single();
+
       // Create new conversation
       const { data, error } = await supabase
         .from('conversations')
         .insert([{
           property_id: propertyId,
           locataire_id: locataireId,
-          gestionnaire_id: gestionnaireId
+          gestionnaire_id: gestionnaireId,
+          space_id: property?.space_id
         }])
         .select()
         .single();
