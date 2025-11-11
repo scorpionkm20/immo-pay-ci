@@ -4,9 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Navbar } from '@/components/Navbar';
+import { Building2, UserPlus, LogIn } from 'lucide-react';
 import { z } from 'zod';
 
 const signUpSchema = z.object({
@@ -97,20 +99,41 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Bienvenue</CardTitle>
-          <CardDescription className="text-center">
-            Gérez vos biens immobiliers facilement
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Connexion</TabsTrigger>
-              <TabsTrigger value="signup">Inscription</TabsTrigger>
-            </TabsList>
+    <div className="flex min-h-screen flex-col bg-background">
+      <Navbar />
+      
+      <div className="flex flex-1 items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          {/* Logo/Brand */}
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary">
+              <Building2 className="h-10 w-10 text-white" />
+            </div>
+            <h1 className="mb-2 text-3xl font-bold">LoyerFacile</h1>
+            <p className="text-muted-foreground">
+              La solution moderne pour la gestion immobilière
+            </p>
+          </div>
+
+          <Card className="border-2 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-2xl">Bienvenue</CardTitle>
+              <CardDescription>
+                Connectez-vous ou créez un compte pour commencer
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="signin" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signin" className="gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Connexion
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Inscription
+                  </TabsTrigger>
+                </TabsList>
 
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
@@ -144,7 +167,8 @@ const Auth = () => {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full bg-primary hover:bg-primary-hover" disabled={loading}>
+                  <LogIn className="mr-2 h-4 w-4" />
                   {loading ? 'Connexion...' : 'Se connecter'}
                 </Button>
               </form>
@@ -232,7 +256,8 @@ const Auth = () => {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full bg-primary hover:bg-primary-hover" disabled={loading}>
+                  <UserPlus className="mr-2 h-4 w-4" />
                   {loading ? "Inscription..." : "S'inscrire"}
                 </Button>
               </form>
@@ -240,6 +265,8 @@ const Auth = () => {
           </Tabs>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   );
 };

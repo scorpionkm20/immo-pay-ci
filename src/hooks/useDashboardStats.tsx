@@ -1,185 +1,86 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
-
-export interface DashboardStats {
-  totalRevenue: number;
-  monthlyRevenue: number;
-  occupancyRate: number;
-  totalProperties: number;
-  occupiedProperties: number;
-  pendingPayments: number;
-  latePayments: Array<{
-    id: string;
-    lease_id: string;
-    montant: number;
-    mois_paiement: string;
-    locataire_name: string;
-    property_title: string;
-  }>;
-  revenueByMonth: Array<{
-    month: string;
-    revenue: number;
-  }>;
-}
+import { useAuth } from './useAuth';
 
 export const useDashboardStats = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalRevenue: 0,
-    monthlyRevenue: 0,
-    occupancyRate: 0,
-    totalProperties: 0,
-    occupiedProperties: 0,
-    pendingPayments: 0,
-    latePayments: [],
-    revenueByMonth: []
-  });
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const { user, userRole } = useAuth();
 
-  const fetchStats = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats', user?.id, userRole],
+    queryFn: async () => {
+      if (!user) return null;
 
-      // Get gestionnaire's properties
-      const { data: properties, error: propertiesError } = await supabase
-        .from('properties')
-        .select('id, statut')
-        .eq('gestionnaire_id', user.id);
+      if (userRole === 'gestionnaire') {
+        // Stats pour gestionnaire
+        const [propertiesResult, leasesResult, ticketsResult, paymentsResult] = await Promise.all([
+          supabase
+            .from('properties')
+            .select('*', { count: 'exact' })
+            .eq('gestionnaire_id', user.id),
+          supabase
+            .from('leases')
+            .select('*', { count: 'exact' })
+            .eq('gestionnaire_id', user.id)
+            .eq('statut', 'actif'),
+          supabase
+            .from('maintenance_tickets')
+            .select('*, leases!inner(gestionnaire_id)', { count: 'exact' })
+            .eq('leases.gestionnaire_id', user.id)
+            .eq('statut', 'ouvert'),
+          supabase
+            .from('payments')
+            .select('montant, leases!inner(gestionnaire_id)')
+            .eq('leases.gestionnaire_id', user.id)
+            .eq('statut', 'reussi')
+            .gte('date_paiement', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+        ]);
 
-      if (propertiesError) throw propertiesError;
+        const totalRevenue = paymentsResult.data?.reduce((sum, payment) => sum + Number(payment.montant), 0) || 0;
 
-      const totalProperties = properties?.length || 0;
-      const occupiedProperties = properties?.filter(p => p.statut === 'loue').length || 0;
-      const occupancyRate = totalProperties > 0 ? (occupiedProperties / totalProperties) * 100 : 0;
+        return {
+          totalProperties: propertiesResult.count || 0,
+          activeLeases: leasesResult.count || 0,
+          openTickets: ticketsResult.count || 0,
+          monthlyRevenue: totalRevenue,
+        };
+      } else if (userRole === 'locataire') {
+        // Stats pour locataire
+        const [leasesResult, ticketsResult, paymentsResult, documentsResult] = await Promise.all([
+          supabase
+            .from('leases')
+            .select('*', { count: 'exact' })
+            .eq('locataire_id', user.id)
+            .eq('statut', 'actif'),
+          supabase
+            .from('maintenance_tickets')
+            .select('*, leases!inner(locataire_id)', { count: 'exact' })
+            .eq('leases.locataire_id', user.id)
+            .eq('statut', 'ouvert'),
+          supabase
+            .from('payments')
+            .select('*, leases!inner(locataire_id)', { count: 'exact' })
+            .eq('leases.locataire_id', user.id)
+            .eq('statut', 'en_attente')
+            .gte('mois_paiement', new Date().toISOString().split('T')[0]),
+          supabase
+            .from('documents')
+            .select('*, leases!inner(locataire_id)', { count: 'exact' })
+            .eq('leases.locataire_id', user.id)
+            .eq('signe', false),
+        ]);
 
-      // Get active leases for these properties
-      const propertyIds = properties?.map(p => p.id) || [];
-      const { data: leases, error: leasesError } = await supabase
-        .from('leases')
-        .select('id, property_id, locataire_id, montant_mensuel')
-        .in('property_id', propertyIds)
-        .eq('statut', 'actif');
-
-      if (leasesError) throw leasesError;
-
-      // Get all payments for these leases
-      const leaseIds = leases?.map(l => l.id) || [];
-      const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
-        .select('*')
-        .in('lease_id', leaseIds);
-
-      if (paymentsError) throw paymentsError;
-
-      // Calculate total revenue (successful payments)
-      const totalRevenue = payments
-        ?.filter(p => p.statut === 'reussi')
-        .reduce((sum, p) => sum + Number(p.montant), 0) || 0;
-
-      // Calculate current month revenue
-      const currentMonthStart = startOfMonth(new Date());
-      const currentMonthEnd = endOfMonth(new Date());
-      const monthlyRevenue = payments
-        ?.filter(p => 
-          p.statut === 'reussi' && 
-          new Date(p.date_paiement) >= currentMonthStart &&
-          new Date(p.date_paiement) <= currentMonthEnd
-        )
-        .reduce((sum, p) => sum + Number(p.montant), 0) || 0;
-
-      // Calculate pending and late payments
-      const today = new Date();
-      const pendingPayments = payments?.filter(p => 
-        p.statut === 'en_attente' || p.statut === 'en_cours'
-      ).length || 0;
-
-      // Get late payments with details
-      const latePaymentsList = await Promise.all(
-        payments
-          ?.filter(p => {
-            const paymentDate = new Date(p.mois_paiement);
-            return (p.statut === 'en_attente' || p.statut === 'echoue') && paymentDate < today;
-          })
-          .map(async (payment) => {
-            const lease = leases?.find(l => l.id === payment.lease_id);
-            if (!lease) return null;
-
-            const { data: property } = await supabase
-              .from('properties')
-              .select('titre')
-              .eq('id', lease.property_id)
-              .single();
-
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('user_id', lease.locataire_id)
-              .single();
-
-            return {
-              id: payment.id,
-              lease_id: payment.lease_id,
-              montant: Number(payment.montant),
-              mois_paiement: payment.mois_paiement,
-              locataire_name: profile?.full_name || 'Inconnu',
-              property_title: property?.titre || 'Propriété inconnue'
-            };
-          }) || []
-      );
-
-      // Calculate revenue by month (last 6 months)
-      const revenueByMonth = [];
-      for (let i = 5; i >= 0; i--) {
-        const monthDate = subMonths(new Date(), i);
-        const monthStart = startOfMonth(monthDate);
-        const monthEnd = endOfMonth(monthDate);
-        
-        const monthRevenue = payments
-          ?.filter(p => 
-            p.statut === 'reussi' && 
-            new Date(p.date_paiement) >= monthStart &&
-            new Date(p.date_paiement) <= monthEnd
-          )
-          .reduce((sum, p) => sum + Number(p.montant), 0) || 0;
-
-        revenueByMonth.push({
-          month: format(monthDate, 'MMM yyyy'),
-          revenue: monthRevenue
-        });
+        return {
+          activeLeases: leasesResult.count || 0,
+          openTickets: ticketsResult.count || 0,
+          pendingPayments: paymentsResult.count || 0,
+          unsignedDocuments: documentsResult.count || 0,
+        };
       }
 
-      setStats({
-        totalRevenue,
-        monthlyRevenue,
-        occupancyRate,
-        totalProperties,
-        occupiedProperties,
-        pendingPayments,
-        latePayments: latePaymentsList.filter(p => p !== null) as any[],
-        revenueByMonth
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les statistiques"
-      });
-      console.error('Error fetching dashboard stats:', error);
-    }
-    setLoading(false);
-  };
+      return null;
+    },
+    enabled: !!user && !!userRole,
+  });
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  return {
-    stats,
-    loading,
-    refetch: fetchStats
-  };
+  return { stats, isLoading };
 };
