@@ -25,6 +25,7 @@ import NotificationSettings from "./pages/NotificationSettings";
 import SearchAlerts from "./pages/SearchAlerts";
 import Favorites from "./pages/Favorites";
 import FavoritesCompare from "./pages/FavoritesCompare";
+import ManageSpace from "./pages/ManageSpace";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/search-alerts" element={<SearchAlerts />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/favorites/compare" element={<FavoritesCompare />} />
+            <Route path="/manage-space" element={<ManageSpace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building2, LogOut, User, Home } from 'lucide-react';
+import { Building2, LogOut, User, Home, Settings } from 'lucide-react';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
 import { SpaceSelector } from '@/components/SpaceSelector';
 import { useState, useEffect } from 'react';
@@ -109,6 +109,10 @@ export const Navbar = () => {
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
                     <span>Profil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/manage-space')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Gérer l'espace</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
