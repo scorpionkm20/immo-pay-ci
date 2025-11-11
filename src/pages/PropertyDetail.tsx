@@ -240,14 +240,26 @@ const PropertyDetail = () => {
       )}
 
       <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
+        {/* Smart Back Button */}
         <Button
           variant="ghost"
-          onClick={() => navigate('/properties')}
+          onClick={() => {
+            if (user) {
+              // For authenticated users, go back in history or to dashboard
+              if (window.history.length > 2) {
+                navigate(-1);
+              } else {
+                navigate('/dashboard');
+              }
+            } else {
+              // For unauthenticated users, go to home/landing page
+              navigate('/');
+            }
+          }}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour aux annonces
+          {user ? 'Retour' : 'Accueil'}
         </Button>
 
         {/* Image Gallery */}
