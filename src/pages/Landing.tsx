@@ -9,74 +9,66 @@ import heroImage from '@/assets/hero-image.jpg';
 import featureUsers from '@/assets/feature-users.jpg';
 import featurePayments from '@/assets/feature-payments.jpg';
 import featureManagement from '@/assets/feature-management.jpg';
-
 const Landing = () => {
   const navigate = useNavigate();
-  const { properties } = useProperties();
+  const {
+    properties
+  } = useProperties();
   const featuredProperties = properties?.slice(0, 3) || [];
-
-  const features = [
-    {
-      icon: Building2,
-      title: 'Gestion Simplifiée',
-      description: 'Gérez toutes vos propriétés depuis un seul tableau de bord intuitif.',
-      image: featureManagement,
-    },
-    {
-      icon: CreditCard,
-      title: 'Paiements Sécurisés',
-      description: 'Payez votre loyer en toute sécurité avec Orange Money, MTN Mobile Money, et Moov Money.',
-      image: featurePayments,
-    },
-    {
-      icon: FileText,
-      title: 'Documents Numériques',
-      description: 'Signez et gérez tous vos contrats et documents en ligne.',
-      image: featureUsers,
-    },
-  ];
-
-  const stats = [
-    { value: '1000+', label: 'Propriétés' },
-    { value: '500+', label: 'Gestionnaires' },
-    { value: '2000+', label: 'Locataires Satisfaits' },
-    { value: '100%', label: 'Sécurisé' },
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const features = [{
+    icon: Building2,
+    title: 'Gestion Simplifiée',
+    description: 'Gérez toutes vos propriétés depuis un seul tableau de bord intuitif.',
+    image: featureManagement
+  }, {
+    icon: CreditCard,
+    title: 'Paiements Sécurisés',
+    description: 'Payez votre loyer en toute sécurité avec Orange Money, MTN Mobile Money, et Moov Money.',
+    image: featurePayments
+  }, {
+    icon: FileText,
+    title: 'Documents Numériques',
+    description: 'Signez et gérez tous vos contrats et documents en ligne.',
+    image: featureUsers
+  }];
+  const stats = [{
+    value: '1000+',
+    label: 'Propriétés'
+  }, {
+    value: '500+',
+    label: 'Gestionnaires'
+  }, {
+    value: '2000+',
+    label: 'Locataires Satisfaits'
+  }, {
+    value: '100%',
+    label: 'Sécurisé'
+  }];
+  return <div className="min-h-screen bg-background">
       <Navbar />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero opacity-90" />
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImage})`, mixBlendMode: 'multiply', opacity: 0.3 }}
-        />
+        <div className="absolute inset-0 bg-cover bg-center" style={{
+        backgroundImage: `url(${heroImage})`,
+        mixBlendMode: 'multiply',
+        opacity: 0.3
+      }} />
         <div className="container relative z-10 py-24 md:py-32">
           <div className="mx-auto max-w-3xl text-center text-white">
-            <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+            <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-5xl">
               Gérez vos loyers en toute sérénité
             </h1>
             <p className="mb-8 text-lg text-gray-100 md:text-xl">
               La plateforme ivoirienne qui simplifie la gestion immobilière et sécurise vos paiements de loyer.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-              <Button
-                size="lg"
-                onClick={() => navigate('/properties')}
-                className="bg-secondary hover:bg-secondary-hover text-secondary-foreground"
-              >
+              <Button size="lg" onClick={() => navigate('/properties')} className="bg-secondary hover:bg-secondary-hover text-secondary-foreground">
                 <Search className="mr-2 h-5 w-5" />
                 Trouver un logement
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate('/auth')}
-                className="bg-white text-primary hover:bg-white/90 border-white"
-              >
+              <Button size="lg" variant="outline" onClick={() => navigate('/auth')} className="bg-white text-primary hover:bg-white/90 border-white">
                 <Home className="mr-2 h-5 w-5" />
                 Je suis gestionnaire
               </Button>
@@ -89,12 +81,10 @@ const Landing = () => {
       <section className="border-y bg-primary-light py-12">
         <div className="container">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
+            {stats.map((stat, index) => <div key={index} className="text-center">
                 <div className="mb-2 text-4xl font-bold text-primary">{stat.value}</div>
                 <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -112,14 +102,9 @@ const Landing = () => {
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
-            {features.map((feature, index) => (
-              <Card key={index} className="overflow-hidden transition-shadow hover:shadow-lg">
+            {features.map((feature, index) => <Card key={index} className="overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="aspect-video overflow-hidden">
-                  <img
-                    src={feature.image}
-                    alt={feature.title}
-                    className="h-full w-full object-cover transition-transform hover:scale-105"
-                  />
+                  <img src={feature.image} alt={feature.title} className="h-full w-full object-cover transition-transform hover:scale-105" />
                 </div>
                 <CardHeader>
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -128,15 +113,13 @@ const Landing = () => {
                   <CardTitle>{feature.title}</CardTitle>
                   <CardDescription>{feature.description}</CardDescription>
                 </CardHeader>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
 
       {/* Featured Properties */}
-      {featuredProperties.length > 0 && (
-        <section className="bg-muted py-20">
+      {featuredProperties.length > 0 && <section className="bg-muted py-20">
           <div className="container">
             <div className="mb-12 text-center">
               <h2 className="mb-4 text-3xl font-bold text-foreground md:text-4xl">
@@ -148,9 +131,7 @@ const Landing = () => {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {featuredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
+              {featuredProperties.map(property => <PropertyCard key={property.id} property={property} />)}
             </div>
 
             <div className="mt-12 text-center">
@@ -159,8 +140,7 @@ const Landing = () => {
               </Button>
             </div>
           </div>
-        </section>
-      )}
+        </section>}
 
       {/* CTA Section */}
       <section className="relative overflow-hidden bg-gradient-primary py-20 text-white">
@@ -175,19 +155,10 @@ const Landing = () => {
               leurs transactions immobilières en Côte d'Ivoire.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-              <Button
-                size="lg"
-                onClick={() => navigate('/auth')}
-                className="bg-secondary hover:bg-secondary-hover text-secondary-foreground"
-              >
+              <Button size="lg" onClick={() => navigate('/auth')} className="bg-secondary hover:bg-secondary-hover text-secondary-foreground">
                 Créer un Compte Gratuit
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate('/properties')}
-                className="bg-white text-primary hover:bg-white/90 border-white"
-              >
+              <Button size="lg" variant="outline" onClick={() => navigate('/properties')} className="bg-white text-primary hover:bg-white/90 border-white">
                 Explorer les Annonces
               </Button>
             </div>
@@ -249,8 +220,6 @@ const Landing = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Landing;
