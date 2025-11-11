@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      leases: {
+        Row: {
+          caution_montant: number
+          caution_payee: boolean | null
+          contrat_url: string | null
+          created_at: string
+          date_debut: string
+          date_fin: string | null
+          gestionnaire_id: string
+          id: string
+          locataire_id: string
+          montant_mensuel: number
+          property_id: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          caution_montant: number
+          caution_payee?: boolean | null
+          contrat_url?: string | null
+          created_at?: string
+          date_debut: string
+          date_fin?: string | null
+          gestionnaire_id: string
+          id?: string
+          locataire_id: string
+          montant_mensuel: number
+          property_id: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          caution_montant?: number
+          caution_payee?: boolean | null
+          contrat_url?: string | null
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          gestionnaire_id?: string
+          id?: string
+          locataire_id?: string
+          montant_mensuel?: number
+          property_id?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leases_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -41,6 +97,78 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          adresse: string
+          caution: number
+          created_at: string
+          date_mise_a_jour: string
+          date_publication: string
+          description: string
+          equipements: string[] | null
+          gestionnaire_id: string
+          id: string
+          images: string[] | null
+          nombre_pieces: number
+          prix_mensuel: number
+          proprietaire_id: string | null
+          quartier: string | null
+          statut: Database["public"]["Enums"]["property_status"]
+          surface_m2: number | null
+          titre: string
+          type_propriete: string
+          updated_at: string
+          validation_proprietaire: boolean | null
+          ville: string
+        }
+        Insert: {
+          adresse: string
+          caution: number
+          created_at?: string
+          date_mise_a_jour?: string
+          date_publication?: string
+          description: string
+          equipements?: string[] | null
+          gestionnaire_id: string
+          id?: string
+          images?: string[] | null
+          nombre_pieces: number
+          prix_mensuel: number
+          proprietaire_id?: string | null
+          quartier?: string | null
+          statut?: Database["public"]["Enums"]["property_status"]
+          surface_m2?: number | null
+          titre: string
+          type_propriete: string
+          updated_at?: string
+          validation_proprietaire?: boolean | null
+          ville: string
+        }
+        Update: {
+          adresse?: string
+          caution?: number
+          created_at?: string
+          date_mise_a_jour?: string
+          date_publication?: string
+          description?: string
+          equipements?: string[] | null
+          gestionnaire_id?: string
+          id?: string
+          images?: string[] | null
+          nombre_pieces?: number
+          prix_mensuel?: number
+          proprietaire_id?: string | null
+          quartier?: string | null
+          statut?: Database["public"]["Enums"]["property_status"]
+          surface_m2?: number | null
+          titre?: string
+          type_propriete?: string
+          updated_at?: string
+          validation_proprietaire?: boolean | null
+          ville?: string
         }
         Relationships: []
       }
@@ -80,6 +208,11 @@ export type Database = {
     }
     Enums: {
       app_role: "locataire" | "gestionnaire" | "proprietaire"
+      property_status:
+        | "disponible"
+        | "loue"
+        | "en_attente_validation"
+        | "indisponible"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -208,6 +341,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["locataire", "gestionnaire", "proprietaire"],
+      property_status: [
+        "disponible",
+        "loue",
+        "en_attente_validation",
+        "indisponible",
+      ],
     },
   },
 } as const

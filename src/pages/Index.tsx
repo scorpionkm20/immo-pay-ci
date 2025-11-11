@@ -57,7 +57,10 @@ const Index = () => {
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={() => navigate('/profile')} variant="default">
+            <Button onClick={() => navigate('/properties')} variant="default">
+              Voir les annonces
+            </Button>
+            <Button onClick={() => navigate('/profile')} variant="outline">
               Mon Profil
             </Button>
           </div>
