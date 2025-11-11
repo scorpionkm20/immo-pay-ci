@@ -57,12 +57,11 @@ const Landing = () => {
         <div className="container relative z-10 py-24 md:py-32">
           <div className="mx-auto max-w-3xl text-center text-white">
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Louez et Gérez vos Propriétés en{' '}
-              <span className="text-secondary">Côte d'Ivoire</span>
+              Gérez vos loyers en{' '}
+              <span className="text-secondary">toute sérénité</span>
             </h1>
             <p className="mb-8 text-lg text-gray-100 md:text-xl">
-              La plateforme complète pour locataires et gestionnaires. Trouvez votre logement idéal
-              ou gérez vos propriétés en toute simplicité.
+              La plateforme ivoirienne qui simplifie la gestion immobilière et sécurise vos paiements de loyer.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button
@@ -71,7 +70,7 @@ const Landing = () => {
                 className="bg-secondary hover:bg-secondary-hover text-secondary-foreground"
               >
                 <Search className="mr-2 h-5 w-5" />
-                Voir les Annonces
+                Trouver un logement
               </Button>
               <Button
                 size="lg"
@@ -80,7 +79,7 @@ const Landing = () => {
                 className="bg-white text-primary hover:bg-white/90 border-white"
               >
                 <Home className="mr-2 h-5 w-5" />
-                Publier une Annonce
+                Je suis gestionnaire
               </Button>
             </div>
           </div>

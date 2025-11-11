@@ -5,10 +5,11 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navbar } from '@/components/Navbar';
-import { Building2, Users, FileText, DollarSign, Wrench, Bell, TrendingUp, Home } from 'lucide-react';
+import { Building2, Users, FileText, DollarSign, Wrench, Bell, TrendingUp, Home, Clock, AlertCircle, Percent } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -162,6 +163,151 @@ const Dashboard = () => {
             ))
           )}
         </div>
+
+        {/* Analytics Charts for Gestionnaires */}
+        {userRole === 'gestionnaire' && stats?.chartData && (
+          <>
+            {/* KPI Cards */}
+            <div className="grid gap-6 md:grid-cols-3 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Taux d'Occupation</CardTitle>
+                  <Percent className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.kpis?.occupancyRate || 0}%</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats.activeLeases} / {stats.totalProperties} propriétés occupées
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Délai Moyen de Résolution</CardTitle>
+                  <Clock className="h-5 w-5 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.kpis?.avgResolutionTime || 0}h</div>
+                  <p className="text-xs text-muted-foreground mt-1">Temps moyen tickets maintenance</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Paiements en Retard</CardTitle>
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.kpis?.latePayments || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Paiements à relancer</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts Grid */}
+            <div className="grid gap-6 lg:grid-cols-2 mb-8">
+              {/* Monthly Revenue Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenus Mensuels</CardTitle>
+                  <CardDescription>Évolution des revenus sur les 12 derniers mois</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={stats.chartData.monthlyRevenue}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="month" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                        formatter={(value: any) => `${Number(value).toLocaleString()} FCFA`}
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} name="Revenus" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Revenue by Property Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenus par Propriété</CardTitle>
+                  <CardDescription>Top 10 des propriétés les plus rentables</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={stats.chartData.revenueByProperty}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="property" className="text-xs" angle={-45} textAnchor="end" height={100} />
+                      <YAxis className="text-xs" />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                        formatter={(value: any) => `${Number(value).toLocaleString()} FCFA`}
+                      />
+                      <Bar dataKey="revenue" fill="hsl(var(--primary))" name="Revenus" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Tickets by Status Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tickets de Maintenance</CardTitle>
+                  <CardDescription>Répartition par statut</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={stats.chartData.ticketsByStatus}
+                        dataKey="count"
+                        nameKey="status"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={(entry) => `${entry.status}: ${entry.count}`}
+                      >
+                        {stats.chartData.ticketsByStatus.map((entry: any, index: number) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={
+                              entry.status === 'ouvert' ? 'hsl(var(--destructive))' :
+                              entry.status === 'en_cours' ? 'hsl(var(--warning))' :
+                              'hsl(var(--success))'
+                            } 
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Tickets by Priority Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Priorités des Tickets</CardTitle>
+                  <CardDescription>Répartition par niveau de priorité</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={stats.chartData.ticketsByPriority}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="priority" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
+                      <Bar dataKey="count" name="Nombre" fill="hsl(var(--secondary))" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
 
         {/* Actions rapides */}
         <Card>
