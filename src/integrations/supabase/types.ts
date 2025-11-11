@@ -469,6 +469,62 @@ export type Database = {
         }
         Relationships: []
       }
+      tour_appointments: {
+        Row: {
+          created_at: string | null
+          date_rendez_vous: string
+          duree_minutes: number | null
+          gestionnaire_id: string
+          id: string
+          lien_video: string | null
+          locataire_id: string
+          notes_gestionnaire: string | null
+          notes_locataire: string | null
+          property_id: string
+          statut: string
+          type_visite: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_rendez_vous: string
+          duree_minutes?: number | null
+          gestionnaire_id: string
+          id?: string
+          lien_video?: string | null
+          locataire_id: string
+          notes_gestionnaire?: string | null
+          notes_locataire?: string | null
+          property_id: string
+          statut?: string
+          type_visite?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_rendez_vous?: string
+          duree_minutes?: number | null
+          gestionnaire_id?: string
+          id?: string
+          lien_video?: string | null
+          locataire_id?: string
+          notes_gestionnaire?: string | null
+          notes_locataire?: string | null
+          property_id?: string
+          statut?: string
+          type_visite?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_appointments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -489,6 +545,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      virtual_tours: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          media_url: string
+          order_index: number | null
+          property_id: string
+          thumbnail_url: string | null
+          titre: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          media_url: string
+          order_index?: number | null
+          property_id: string
+          thumbnail_url?: string | null
+          titre: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          media_url?: string
+          order_index?: number | null
+          property_id?: string
+          thumbnail_url?: string | null
+          titre?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "virtual_tours_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
