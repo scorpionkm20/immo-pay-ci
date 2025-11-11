@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { AvatarUpload } from '@/components/AvatarUpload';
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(2, { message: "Le nom doit contenir au moins 2 caractères" }).max(100),
@@ -119,7 +120,14 @@ const Profile = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <AvatarUpload
+              userId={user.id}
+              currentAvatarUrl={profileData.avatarUrl}
+              userEmail={user.email || ''}
+              onAvatarUpdate={(url) => setProfileData({ ...profileData, avatarUrl: url })}
+            />
+            
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

@@ -9,12 +9,36 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Building2, LogOut, User, Home } from 'lucide-react';
+import { NotificationDropdown } from '@/components/NotificationDropdown';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Navbar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (user) {
+      fetchAvatar();
+    }
+  }, [user]);
+
+  const fetchAvatar = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (data?.avatar_url) {
+      setAvatarUrl(data.avatar_url);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -50,10 +74,13 @@ export const Navbar = () => {
                 Tableau de bord
               </Button>
               
+              <NotificationDropdown />
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar>
+                      <AvatarImage src={avatarUrl} alt="Photo de profil" />
                       <AvatarFallback className="bg-primary text-primary-foreground">
                         {getUserInitials(user.email || 'U')}
                       </AvatarFallback>
