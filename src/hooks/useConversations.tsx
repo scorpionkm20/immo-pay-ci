@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,7 +21,7 @@ export const useConversations = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -35,17 +35,14 @@ export const useConversations = () => {
 
       if (error) throw error;
 
-      // Enrich conversations with additional data
       const enrichedConversations = await Promise.all(
         (data || []).map(async (conv) => {
-          // Get property title
           const { data: property } = await supabase
             .from('properties')
             .select('titre')
             .eq('id', conv.property_id)
             .single();
 
-          // Get other user's name
           const otherUserId = conv.locataire_id === user.id 
             ? conv.gestionnaire_id 
             : conv.locataire_id;
@@ -56,7 +53,6 @@ export const useConversations = () => {
             .eq('user_id', otherUserId)
             .single();
 
-          // Count unread messages
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
@@ -75,15 +71,10 @@ export const useConversations = () => {
 
       setConversations(enrichedConversations);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les conversations"
-      });
       console.error('Error fetching conversations:', error);
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchConversations();
@@ -106,7 +97,7 @@ export const useConversations = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [toast]);
+  }, [fetchConversations]);
 
   const createOrGetConversation = async (propertyId: string, locataireId: string, gestionnaireId: string) => {
     try {

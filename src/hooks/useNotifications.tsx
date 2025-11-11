@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,7 +20,7 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('notifications')
@@ -28,17 +28,13 @@ export const useNotifications = () => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les notifications"
-      });
+      console.error('Error fetching notifications:', error);
     } else {
       setNotifications(data || []);
       setUnreadCount(data?.filter(n => !n.lu).length || 0);
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
@@ -61,7 +57,7 @@ export const useNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [toast]);
+  }, [fetchNotifications]);
 
   const markAsRead = async (id: string) => {
     const { error } = await supabase

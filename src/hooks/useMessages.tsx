@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,7 +17,7 @@ export const useMessages = (conversationId: string | null) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!conversationId) {
       setMessages([]);
       setLoading(false);
@@ -34,7 +34,6 @@ export const useMessages = (conversationId: string | null) => {
 
       if (error) throw error;
 
-      // Enrich messages with sender names
       const enrichedMessages = await Promise.all(
         (data || []).map(async (msg) => {
           const { data: profile } = await supabase
@@ -52,15 +51,10 @@ export const useMessages = (conversationId: string | null) => {
 
       setMessages(enrichedMessages);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les messages"
-      });
       console.error('Error fetching messages:', error);
     }
     setLoading(false);
-  };
+  }, [conversationId]);
 
   useEffect(() => {
     fetchMessages();
@@ -97,7 +91,7 @@ export const useMessages = (conversationId: string | null) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, toast]);
+  }, [fetchMessages, conversationId]);
 
   const sendMessage = async (content: string) => {
     if (!conversationId) return;
