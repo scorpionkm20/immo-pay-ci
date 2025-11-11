@@ -1,1 +1,7 @@
 project_id = "kpvziakutvzsmrnsvevi"
+
+[functions.initiate-payment]
+verify_jwt = true
+
+[functions.generate-receipt]
+verify_jwt = true

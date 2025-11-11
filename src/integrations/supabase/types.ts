@@ -70,6 +70,59 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          created_at: string
+          date_paiement: string | null
+          id: string
+          lease_id: string
+          methode_paiement: string
+          mois_paiement: string
+          montant: number
+          numero_telephone: string
+          recu_url: string | null
+          statut: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_paiement?: string | null
+          id?: string
+          lease_id: string
+          methode_paiement: string
+          mois_paiement: string
+          montant: number
+          numero_telephone: string
+          recu_url?: string | null
+          statut?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_paiement?: string | null
+          id?: string
+          lease_id?: string
+          methode_paiement?: string
+          mois_paiement?: string
+          montant?: number
+          numero_telephone?: string
+          recu_url?: string | null
+          statut?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

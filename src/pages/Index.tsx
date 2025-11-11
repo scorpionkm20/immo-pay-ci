@@ -61,13 +61,23 @@ const Index = () => {
               Voir les annonces
             </Button>
             {userRole === 'gestionnaire' && (
-              <Button onClick={() => navigate('/my-properties')} variant="outline">
-                Mes propriétés
-              </Button>
+              <>
+                <Button onClick={() => navigate('/my-properties')} variant="outline">
+                  Mes propriétés
+                </Button>
+                <Button onClick={() => navigate('/payment-history')} variant="outline">
+                  Historique des paiements
+                </Button>
+              </>
             )}
             {(userRole === 'locataire' || userRole === 'gestionnaire') && (
               <Button onClick={() => navigate('/my-leases')} variant="outline">
                 Mes baux
+              </Button>
+            )}
+            {userRole === 'locataire' && (
+              <Button onClick={() => navigate('/payments')}>
+                Payer mon loyer
               </Button>
             )}
             <Button onClick={() => navigate('/profile')} variant="outline">
