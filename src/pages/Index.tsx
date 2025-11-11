@@ -80,31 +80,34 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <Button onClick={() => navigate('/properties')} variant="default">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button onClick={() => navigate('/properties')} variant="default" className="w-full">
               Voir les annonces
             </Button>
             {userRole === 'gestionnaire' && (
               <>
-                <Button onClick={() => navigate('/my-properties')} variant="outline">
+                <Button onClick={() => navigate('/dashboard')} variant="default" className="w-full">
+                  Dashboard
+                </Button>
+                <Button onClick={() => navigate('/my-properties')} variant="outline" className="w-full">
                   Mes propriétés
                 </Button>
-                <Button onClick={() => navigate('/payment-history')} variant="outline">
+                <Button onClick={() => navigate('/payment-history')} variant="outline" className="w-full">
                   Historique des paiements
                 </Button>
               </>
             )}
             {(userRole === 'locataire' || userRole === 'gestionnaire') && (
-              <Button onClick={() => navigate('/my-leases')} variant="outline">
+              <Button onClick={() => navigate('/my-leases')} variant="outline" className="w-full">
                 Mes baux
               </Button>
             )}
             {userRole === 'locataire' && (
-              <Button onClick={() => navigate('/payments')}>
+              <Button onClick={() => navigate('/payments')} className="w-full">
                 Payer mon loyer
               </Button>
             )}
-            <Button onClick={() => navigate('/profile')} variant="outline">
+            <Button onClick={() => navigate('/profile')} variant="outline" className="w-full">
               Mon Profil
             </Button>
           </div>
