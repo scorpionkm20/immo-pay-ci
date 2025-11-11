@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useProperties } from '@/hooks/useProperties';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PropertyImageManager } from '@/components/PropertyImageManager';
-import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 const propertySchema = z.object({
   titre: z.string().trim().min(5, "Le titre doit contenir au moins 5 caractères").max(100),
@@ -23,14 +23,17 @@ const propertySchema = z.object({
   caution: z.number().min(0, "La caution ne peut pas être négative"),
   nombre_pieces: z.number().min(1, "Au moins 1 pièce").max(50),
   surface_m2: z.number().optional(),
-  type_propriete: z.string().min(1, "Le type est requis")
+  type_propriete: z.string().min(1, "Le type est requis"),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
-const CreateProperty = () => {
+const EditProperty = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
-  const { createProperty } = useProperties();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [images, setImages] = useState<string[]>([]);
 
@@ -45,14 +48,54 @@ const CreateProperty = () => {
     nombre_pieces: '',
     surface_m2: '',
     type_propriete: 'appartement',
-    equipements: [] as string[]
+    latitude: '',
+    longitude: '',
   });
 
   useEffect(() => {
     if (!user || userRole !== 'gestionnaire') {
       navigate('/');
+      return;
     }
-  }, [user, userRole, navigate]);
+    fetchProperty();
+  }, [user, userRole, id]);
+
+  const fetchProperty = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('id', id)
+        .eq('gestionnaire_id', user!.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          titre: data.titre || '',
+          description: data.description || '',
+          adresse: data.adresse || '',
+          ville: data.ville || '',
+          quartier: data.quartier || '',
+          prix_mensuel: data.prix_mensuel?.toString() || '',
+          caution: data.caution?.toString() || '',
+          nombre_pieces: data.nombre_pieces?.toString() || '',
+          surface_m2: data.surface_m2?.toString() || '',
+          type_propriete: data.type_propriete || 'appartement',
+          latitude: data.latitude?.toString() || '',
+          longitude: data.longitude?.toString() || '',
+        });
+        setImages(data.images || []);
+      }
+    } catch (error: any) {
+      console.error('Error fetching property:', error);
+      toast.error('Erreur lors du chargement de la propriété');
+      navigate('/my-properties');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,11 +106,13 @@ const CreateProperty = () => {
       prix_mensuel: parseFloat(formData.prix_mensuel) || 0,
       caution: parseFloat(formData.caution) || 0,
       nombre_pieces: parseInt(formData.nombre_pieces) || 0,
-      surface_m2: formData.surface_m2 ? parseFloat(formData.surface_m2) : undefined
+      surface_m2: formData.surface_m2 ? parseFloat(formData.surface_m2) : undefined,
+      latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
+      longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
     };
 
     const result = propertySchema.safeParse(dataToValidate);
-    
+
     if (!result.success) {
       const newErrors: any = {};
       result.error.errors.forEach((err) => {
@@ -82,49 +127,57 @@ const CreateProperty = () => {
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
 
     try {
-      const { data: property, error: createError } = await createProperty({
-        ...result.data,
-        gestionnaire_id: user!.id,
-        images,
-        equipements: formData.equipements
-      });
+      const { error } = await supabase
+        .from('properties')
+        .update({
+          ...result.data,
+          images,
+          date_mise_a_jour: new Date().toISOString(),
+        })
+        .eq('id', id);
 
-      if (createError || !property) {
-        throw createError;
-      }
+      if (error) throw error;
 
-      toast.success('Propriété créée avec succès');
-      navigate('/properties');
+      toast.success('Propriété mise à jour avec succès');
+      navigate('/my-properties');
     } catch (error: any) {
-      console.error('Error creating property:', error);
-      toast.error('Erreur lors de la création de la propriété');
+      console.error('Error updating property:', error);
+      toast.error('Erreur lors de la mise à jour');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Chargement...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background py-8">
-      <div className="container max-w-3xl mx-auto px-4">
-        <Button variant="ghost" onClick={() => navigate('/properties')} className="mb-4">
+      <div className="container max-w-4xl mx-auto px-4">
+        <Button variant="ghost" onClick={() => navigate('/my-properties')} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour aux annonces
+          Retour à mes propriétés
         </Button>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Nouvelle Annonce</CardTitle>
-            <CardDescription>Publiez une nouvelle propriété</CardDescription>
+            <CardTitle className="text-2xl">Modifier la propriété</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Images */}
+              {/* Images Manager */}
               <div className="space-y-2">
                 <Label>Images de la propriété (max 10)</Label>
                 <PropertyImageManager
+                  propertyId={id}
                   initialImages={images}
                   onImagesChange={setImages}
                   maxImages={10}
@@ -187,6 +240,32 @@ const CreateProperty = () => {
                   placeholder="Rue, numéro..."
                 />
                 {errors.adresse && <p className="text-sm text-destructive">{errors.adresse}</p>}
+              </div>
+
+              {/* GPS Coordinates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="latitude">Latitude (GPS)</Label>
+                  <Input
+                    id="latitude"
+                    type="number"
+                    step="any"
+                    value={formData.latitude}
+                    onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                    placeholder="Ex: 5.359952"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="longitude">Longitude (GPS)</Label>
+                  <Input
+                    id="longitude"
+                    type="number"
+                    step="any"
+                    value={formData.longitude}
+                    onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                    placeholder="Ex: -4.008256"
+                  />
+                </div>
               </div>
 
               {/* Property Details */}
@@ -255,9 +334,18 @@ const CreateProperty = () => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Publication...' : 'Publier l\'annonce'}
-              </Button>
+              <div className="flex gap-4">
+                <Button type="submit" className="flex-1" disabled={saving}>
+                  {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/my-properties')}
+                >
+                  Annuler
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -266,4 +354,4 @@ const CreateProperty = () => {
   );
 };
 
-export default CreateProperty;
+export default EditProperty;

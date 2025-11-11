@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import AssignLeaseDialog from '@/components/AssignLeaseDialog';
-import { ArrowLeft, Plus, Trash2, UserPlus, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, UserPlus, Eye, Edit } from 'lucide-react';
 
 const MyProperties = () => {
   const navigate = useNavigate();
@@ -137,6 +137,14 @@ const MyProperties = () => {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => navigate(`/properties/${property.id}/edit`)}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Modifier
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => navigate(`/properties/${property.id}`)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
@@ -186,14 +194,24 @@ const MyProperties = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/properties/${property.id}`)}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Voir détails
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/properties/${property.id}/edit`)}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Modifier
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/properties/${property.id}`)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Voir détails
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -230,6 +248,14 @@ const MyProperties = () => {
                           Attribuer
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/properties/${property.id}/edit`)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Modifier
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
