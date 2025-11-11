@@ -43,7 +43,6 @@ export const useNotifications = () => {
   useEffect(() => {
     fetchNotifications();
 
-    // Set up realtime subscription
     const channel = supabase
       .channel('notifications-changes')
       .on(
@@ -62,7 +61,7 @@ export const useNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [toast]);
 
   const markAsRead = async (id: string) => {
     const { error } = await supabase

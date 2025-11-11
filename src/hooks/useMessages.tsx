@@ -67,7 +67,6 @@ export const useMessages = (conversationId: string | null) => {
 
     if (!conversationId) return;
 
-    // Set up realtime subscription
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
@@ -81,7 +80,6 @@ export const useMessages = (conversationId: string | null) => {
         async (payload) => {
           const newMessage = payload.new as Message;
           
-          // Get sender name
           const { data: profile } = await supabase
             .from('profiles')
             .select('full_name')
@@ -99,7 +97,7 @@ export const useMessages = (conversationId: string | null) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, toast]);
 
   const sendMessage = async (content: string) => {
     if (!conversationId) return;

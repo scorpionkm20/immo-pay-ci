@@ -88,7 +88,6 @@ export const useConversations = () => {
   useEffect(() => {
     fetchConversations();
 
-    // Set up realtime subscription
     const channel = supabase
       .channel('conversations-changes')
       .on(
@@ -107,7 +106,7 @@ export const useConversations = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [toast]);
 
   const createOrGetConversation = async (propertyId: string, locataireId: string, gestionnaireId: string) => {
     try {
