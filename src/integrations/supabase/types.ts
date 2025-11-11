@@ -511,6 +511,75 @@ export type Database = {
         }
         Relationships: []
       }
+      search_alerts: {
+        Row: {
+          actif: boolean | null
+          created_at: string | null
+          derniere_notification: string | null
+          derniere_verification: string | null
+          equipements: string[] | null
+          frequence: string
+          id: string
+          nom_alerte: string
+          nombre_notifications: number | null
+          nombre_pieces_max: number | null
+          nombre_pieces_min: number | null
+          prix_max: number | null
+          prix_min: number | null
+          quartier: string | null
+          surface_max: number | null
+          surface_min: number | null
+          type_propriete: string | null
+          updated_at: string | null
+          user_id: string
+          ville: string | null
+        }
+        Insert: {
+          actif?: boolean | null
+          created_at?: string | null
+          derniere_notification?: string | null
+          derniere_verification?: string | null
+          equipements?: string[] | null
+          frequence?: string
+          id?: string
+          nom_alerte: string
+          nombre_notifications?: number | null
+          nombre_pieces_max?: number | null
+          nombre_pieces_min?: number | null
+          prix_max?: number | null
+          prix_min?: number | null
+          quartier?: string | null
+          surface_max?: number | null
+          surface_min?: number | null
+          type_propriete?: string | null
+          updated_at?: string | null
+          user_id: string
+          ville?: string | null
+        }
+        Update: {
+          actif?: boolean | null
+          created_at?: string | null
+          derniere_notification?: string | null
+          derniere_verification?: string | null
+          equipements?: string[] | null
+          frequence?: string
+          id?: string
+          nom_alerte?: string
+          nombre_notifications?: number | null
+          nombre_pieces_max?: number | null
+          nombre_pieces_min?: number | null
+          prix_max?: number | null
+          prix_min?: number | null
+          quartier?: string | null
+          surface_max?: number | null
+          surface_min?: number | null
+          type_propriete?: string | null
+          updated_at?: string | null
+          user_id?: string
+          ville?: string | null
+        }
+        Relationships: []
+      }
       tour_appointments: {
         Row: {
           created_at: string | null
@@ -647,6 +716,13 @@ export type Database = {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+        }
+        Returns: boolean
+      }
+      property_matches_alert: {
+        Args: {
+          alert_record: Database["public"]["Tables"]["search_alerts"]["Row"]
+          property_record: Database["public"]["Tables"]["properties"]["Row"]
         }
         Returns: boolean
       }

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PropertyCard from '@/components/PropertyCard';
 import { PropertiesMap } from '@/components/PropertiesMap';
+import { CreateSearchAlertDialog } from '@/components/CreateSearchAlertDialog';
 import { Plus, Search, SlidersHorizontal, ArrowUpDown, Grid3x3, Map } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -147,11 +148,30 @@ const Properties = () => {
   const FiltersContent = () => (
     <div className="space-y-6">
       {activeFiltersCount > 0 && (
-        <div className="flex items-center justify-between pb-4 border-b">
-          <Badge variant="secondary">{activeFiltersCount} filtre(s) actif(s)</Badge>
-          <Button onClick={resetFilters} variant="ghost" size="sm">
-            Réinitialiser
-          </Button>
+        <div className="flex flex-col gap-2 pb-4 border-b">
+          <div className="flex items-center justify-between">
+            <Badge variant="secondary">{activeFiltersCount} filtre(s) actif(s)</Badge>
+            <Button onClick={resetFilters} variant="ghost" size="sm">
+              Réinitialiser
+            </Button>
+          </div>
+          <CreateSearchAlertDialog
+            initialCriteria={{
+              ville: filterVille !== 'all' ? filterVille : undefined,
+              quartier: filterQuartier !== 'all' ? filterQuartier : undefined,
+              type_propriete: filterTypePropriety !== 'all' ? filterTypePropriety : undefined,
+              prix_min: priceRange[0],
+              prix_max: priceRange[1],
+              surface_min: surfaceRange[0],
+              surface_max: surfaceRange[1],
+              nombre_pieces_min: filterPieces !== 'all' ? parseInt(filterPieces) : undefined,
+              equipements: selectedEquipements
+            }}
+          >
+            <Button variant="outline" size="sm" className="w-full">
+              Créer une alerte avec ces critères
+            </Button>
+          </CreateSearchAlertDialog>
         </div>
       )}
 
