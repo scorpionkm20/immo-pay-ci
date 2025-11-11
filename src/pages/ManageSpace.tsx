@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useManagementSpaces } from "@/hooks/useManagementSpaces";
-import { Building2, Plus, Trash2, UserPlus, Settings, Users } from "lucide-react";
+import { useSpaceInvitations } from "@/hooks/useSpaceInvitations";
+import { Building2, Plus, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,11 +41,13 @@ interface SpaceMemberWithProfile {
 
 export default function ManageSpace() {
   const { currentSpace, fetchSpaceMembers, removeMember } = useManagementSpaces();
+  const { invitations, deleteInvitation } = useSpaceInvitations(currentSpace?.id);
   const { user } = useAuth();
   const [members, setMembers] = useState<SpaceMemberWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   const loadMembers = async () => {
     if (!currentSpace) return;
@@ -96,6 +99,16 @@ export default function ManageSpace() {
         return role;
     }
   };
+
+  const copyInvitationLink = (token: string) => {
+    const baseUrl = window.location.origin;
+    const link = `${baseUrl}/accept-invitation?token=${token}`;
+    navigator.clipboard.writeText(link);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  };
+
+  const pendingInvitations = invitations.filter(inv => !inv.accepted && new Date(inv.expires_at) > new Date());
 
   if (!currentSpace) {
     return (
@@ -168,6 +181,75 @@ export default function ManageSpace() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Pending Invitations */}
+        {pendingInvitations.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Invitations en attente
+              </CardTitle>
+              <CardDescription>
+                Liens d'invitation non encore acceptés
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Rôle</TableHead>
+                    <TableHead>Expire</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingInvitations.map((invitation) => (
+                    <TableRow key={invitation.id}>
+                      <TableCell className="font-medium">
+                        {invitation.email}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleBadgeVariant(invitation.role)}>
+                          {getRoleLabel(invitation.role)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {new Date(invitation.expires_at).toLocaleDateString('fr-FR')}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyInvitationLink(invitation.token)}
+                          >
+                            {copiedToken === invitation.token ? (
+                              <Check className="h-4 w-4" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteInvitation(invitation.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Members Table */}
         <Card>

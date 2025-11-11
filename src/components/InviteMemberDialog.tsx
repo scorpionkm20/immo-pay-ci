@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useManagementSpaces } from "@/hooks/useManagementSpaces";
+import { useSpaceInvitations } from "@/hooks/useSpaceInvitations";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,8 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Copy, Check } from "lucide-react";
 
 interface InviteMemberDialogProps {
   open: boolean;
@@ -37,109 +37,135 @@ export const InviteMemberDialog = ({
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<'gestionnaire' | 'proprietaire' | 'locataire'>('locataire');
   const [loading, setLoading] = useState(false);
-  const { addMember } = useManagementSpaces();
-  const { toast } = useToast();
+  const [invitationLink, setInvitationLink] = useState("");
+  const [copied, setCopied] = useState(false);
+  const { createInvitation } = useSpaceInvitations(spaceId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // First, find the user by email
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('user_id', email) // We'll need to add email to profiles or search in auth.users
-        .single();
-
-      if (profileError) {
-        // Try to search by looking up in our profiles with a LIKE query
-        // This is a workaround - ideally we'd have email in profiles or use a server function
-        toast({
-          variant: "destructive",
-          title: "Utilisateur non trouvé",
-          description: "Veuillez entrer l'ID utilisateur au lieu de l'email pour le moment",
-        });
-        setLoading(false);
-        return;
-      }
-
-      const { error } = await addMember(spaceId, email, role);
+      const token = await createInvitation(email, role);
       
-      if (!error) {
-        setEmail("");
-        setRole('locataire');
-        onOpenChange(false);
-        onMemberAdded?.();
+      if (token) {
+        const baseUrl = window.location.origin;
+        const link = `${baseUrl}/accept-invitation?token=${token}`;
+        setInvitationLink(link);
+        toast.success('Invitation créée avec succès');
+        
+        if (onMemberAdded) {
+          onMemberAdded();
+        }
       }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Une erreur est survenue lors de l'invitation",
-      });
+    } catch (error: any) {
+      console.error('Erreur:', error);
+      toast.error(error.message || 'Erreur lors de la création de l\'invitation');
     } finally {
       setLoading(false);
     }
   };
 
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(invitationLink);
+    setCopied(true);
+    toast.success('Lien copié dans le presse-papiers');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleClose = () => {
+    setEmail("");
+    setRole('locataire');
+    setInvitationLink("");
+    setCopied(false);
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Inviter un membre</DialogTitle>
-            <DialogDescription>
-              Ajoutez un nouveau membre à cet espace de gestion
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Inviter un nouveau membre</DialogTitle>
+          <DialogDescription>
+            {invitationLink ? 
+              "Partagez ce lien d'invitation avec la personne." :
+              "Entrez l'email de la personne et sélectionnez son rôle."
+            }
+          </DialogDescription>
+        </DialogHeader>
+        
+        {!invitationLink ? (
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="exemple@email.com"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="role">Rôle</Label>
+                <Select value={role} onValueChange={(value: any) => setRole(value)}>
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Sélectionnez un rôle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="locataire">Locataire</SelectItem>
+                    <SelectItem value="proprietaire">Propriétaire</SelectItem>
+                    <SelectItem value="gestionnaire">Gestionnaire</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={loading}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Création...' : 'Créer l\'invitation'}
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : (
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="userId">ID Utilisateur</Label>
-              <Input
-                id="userId"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="UUID de l'utilisateur"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                Pour le moment, vous devez entrer l'ID utilisateur (UUID) du membre à ajouter
+            <div className="grid gap-2">
+              <Label>Lien d'invitation</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={invitationLink}
+                  readOnly
+                  className="font-mono text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={copyToClipboard}
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Ce lien expire dans 7 jours. Partagez-le par email, WhatsApp ou tout autre moyen.
               </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Rôle</Label>
-              <Select value={role} onValueChange={(value: any) => setRole(value)}>
-                <SelectTrigger id="role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gestionnaire">Gestionnaire</SelectItem>
-                  <SelectItem value="proprietaire">Propriétaire</SelectItem>
-                  <SelectItem value="locataire">Locataire</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                <strong>Gestionnaire:</strong> Gère les propriétés et les membres<br />
-                <strong>Propriétaire:</strong> Possède les propriétés, peut valider<br />
-                <strong>Locataire:</strong> Accès limité à ses baux
-              </p>
-            </div>
+            <DialogFooter>
+              <Button onClick={handleClose}>
+                Fermer
+              </Button>
+            </DialogFooter>
           </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Ajout..." : "Ajouter"}
-            </Button>
-          </DialogFooter>
-        </form>
+        )}
       </DialogContent>
     </Dialog>
   );
