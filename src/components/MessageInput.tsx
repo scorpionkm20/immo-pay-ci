@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Send, Paperclip, Smile, X, FileText, Image as ImageIcon } from 'lucide-react';
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { EmojiPicker } from '@/components/EmojiPicker';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import imageCompression from 'browser-image-compression';
@@ -106,8 +106,8 @@ export const MessageInput = ({ conversationId, onSend, onTyping }: MessageInputP
     }
   };
 
-  const handleEmojiClick = (emojiData: EmojiClickData) => {
-    setMessage(prev => prev + emojiData.emoji);
+  const handleEmojiClick = (emoji: string) => {
+    setMessage(prev => prev + emoji);
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -166,7 +166,7 @@ export const MessageInput = ({ conversationId, onSend, onTyping }: MessageInputP
               <Smile className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-2" align="start">
             <EmojiPicker onEmojiClick={handleEmojiClick} />
           </PopoverContent>
         </Popover>
