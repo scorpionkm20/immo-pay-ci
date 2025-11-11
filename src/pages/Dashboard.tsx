@@ -1,27 +1,75 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useManagementSpaces } from '@/hooks/useManagementSpaces';
+import { useSpaceStats } from '@/hooks/useSpaceStats';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navbar } from '@/components/Navbar';
-import { Building2, Users, FileText, DollarSign, Wrench, Bell, TrendingUp, Home, Clock, AlertCircle, Percent } from 'lucide-react';
-import { useNotifications } from '@/hooks/useNotifications';
-import { Badge } from '@/components/ui/badge';
+import { Building2, Users, FileText, DollarSign, Wrench, TrendingUp, Home, Clock, AlertCircle, Percent, Download, BarChart3 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, userRole, loading } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { currentSpace } = useManagementSpaces();
+  const { stats: spaceStats, propertyPerformance, monthlyRevenue, loading: spaceLoading } = useSpaceStats(currentSpace?.id || null);
   const { stats, isLoading: statsLoading } = useDashboardStats();
+  const [exportingReport, setExportingReport] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
+  const handleExportReport = async () => {
+    if (!currentSpace) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Aucun espace sélectionné",
+      });
+      return;
+    }
+
+    setExportingReport(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-space-report', {
+        body: { spaceId: currentSpace.id },
+      });
+
+      if (error) throw error;
+
+      if (data?.html) {
+        // Open HTML in new window for printing
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(data.html);
+          printWindow.document.close();
+        }
+        
+        toast({
+          title: "Rapport généré",
+          description: "Le rapport a été ouvert dans une nouvelle fenêtre",
+        });
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de générer le rapport",
+      });
+    } finally {
+      setExportingReport(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -123,14 +171,162 @@ const Dashboard = () => {
 
       <div className="container py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Tableau de bord {getRoleDisplay(userRole)}
-          </h1>
-          <p className="text-muted-foreground">
-            Bienvenue, {user.email}
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              Tableau de bord {getRoleDisplay(userRole)}
+            </h1>
+            <p className="text-muted-foreground">
+              {currentSpace ? `Espace: ${currentSpace.nom}` : 'Aucun espace sélectionné'}
+            </p>
+          </div>
+          {userRole === 'gestionnaire' && currentSpace && (
+            <Button onClick={handleExportReport} disabled={exportingReport}>
+              <Download className="h-4 w-4 mr-2" />
+              {exportingReport ? 'Export...' : 'Exporter PDF'}
+            </Button>
+          )}
         </div>
+
+        {/* Space Stats Cards for Gestionnaires */}
+        {userRole === 'gestionnaire' && currentSpace && spaceStats && (
+          <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Propriétés</CardTitle>
+                  <Building2 className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{spaceStats.totalProperties}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {spaceStats.occupiedProperties} occupées
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Taux d'occupation</CardTitle>
+                  <Percent className="h-5 w-5 text-secondary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{spaceStats.occupancyRate.toFixed(1)}%</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Sur {spaceStats.totalProperties} propriétés
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Revenus du mois</CardTitle>
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {spaceStats.monthlyRevenue.toLocaleString('fr-FR')} FCFA
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    / {spaceStats.expectedRevenue.toLocaleString('fr-FR')} FCFA attendus
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Tickets actifs</CardTitle>
+                  <Wrench className="h-5 w-5 text-destructive" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{spaceStats.activeTickets}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {spaceStats.pendingPayments} paiements en attente
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts */}
+            <div className="grid gap-6 lg:grid-cols-2 mb-8">
+              {/* Monthly Revenue Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Évolution des revenus</CardTitle>
+                  <CardDescription>Revenus des 6 derniers mois</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={monthlyRevenue}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="month" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                        formatter={(value: any) => `${Number(value).toLocaleString('fr-FR')} FCFA`}
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} name="Reçu" />
+                      <Line type="monotone" dataKey="expected" stroke="hsl(var(--secondary))" strokeWidth={2} strokeDasharray="5 5" name="Attendu" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Property Performance Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Performance par propriété</CardTitle>
+                  <CardDescription>Revenus mensuels par propriété</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={propertyPerformance}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="propertyTitle" className="text-xs" angle={-45} textAnchor="end" height={100} />
+                      <YAxis className="text-xs" />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                        formatter={(value: any) => `${Number(value).toLocaleString('fr-FR')} FCFA`}
+                      />
+                      <Bar dataKey="revenue" fill="hsl(var(--primary))" name="Revenus" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Property Performance Table */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Comparaison détaillée</CardTitle>
+                  <CardDescription>Performance des propriétés dans l'espace</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">Propriété</th>
+                          <th className="text-right p-2">Revenus</th>
+                          <th className="text-right p-2">Tickets</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {propertyPerformance.map((prop) => (
+                          <tr key={prop.propertyId} className="border-b hover:bg-muted/50">
+                            <td className="p-2">{prop.propertyTitle}</td>
+                            <td className="text-right p-2">{prop.revenue.toLocaleString('fr-FR')} FCFA</td>
+                            <td className="text-right p-2">{prop.ticketCount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
 
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
