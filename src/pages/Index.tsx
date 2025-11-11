@@ -60,6 +60,16 @@ const Index = () => {
             <Button onClick={() => navigate('/properties')} variant="default">
               Voir les annonces
             </Button>
+            {userRole === 'gestionnaire' && (
+              <Button onClick={() => navigate('/my-properties')} variant="outline">
+                Mes propriétés
+              </Button>
+            )}
+            {(userRole === 'locataire' || userRole === 'gestionnaire') && (
+              <Button onClick={() => navigate('/my-leases')} variant="outline">
+                Mes baux
+              </Button>
+            )}
             <Button onClick={() => navigate('/profile')} variant="outline">
               Mon Profil
             </Button>
