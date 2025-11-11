@@ -57,8 +57,7 @@ const Landing = () => {
         <div className="container relative z-10 py-24 md:py-32">
           <div className="mx-auto max-w-3xl text-center text-white">
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Gérez vos loyers en{' '}
-              <span className="text-secondary">toute sérénité</span>
+              Gérez vos loyers en toute sérénité
             </h1>
             <p className="mb-8 text-lg text-gray-100 md:text-xl">
               La plateforme ivoirienne qui simplifie la gestion immobilière et sécurise vos paiements de loyer.
