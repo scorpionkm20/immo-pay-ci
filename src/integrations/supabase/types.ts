@@ -394,6 +394,8 @@ export type Database = {
           gestionnaire_id: string
           id: string
           images: string[] | null
+          latitude: number | null
+          longitude: number | null
           nombre_pieces: number
           prix_mensuel: number
           proprietaire_id: string | null
@@ -417,6 +419,8 @@ export type Database = {
           gestionnaire_id: string
           id?: string
           images?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           nombre_pieces: number
           prix_mensuel: number
           proprietaire_id?: string | null
@@ -440,6 +444,8 @@ export type Database = {
           gestionnaire_id?: string
           id?: string
           images?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           nombre_pieces?: number
           prix_mensuel?: number
           proprietaire_id?: string | null
