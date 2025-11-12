@@ -1,27 +1,27 @@
-import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Home, 
-  Maximize2, 
-  MessageSquare, 
+import { useEffect, useState, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import {
+  ArrowLeft,
+  MapPin,
+  Home,
+  Maximize2,
+  MessageSquare,
   Euro,
   BedDouble,
   X,
   ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+  ChevronRight,
+} from "lucide-react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -30,7 +30,7 @@ const PropertyDetail = () => {
   const [property, setProperty] = useState<any>(null);
   const [gestionnaire, setGestionnaire] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -50,39 +50,39 @@ const PropertyDetail = () => {
     if (!property?.latitude || !property?.longitude || !mapContainer.current) return;
 
     try {
-      const { data: secrets } = await supabase.functions.invoke('get-mapbox-token');
+      const { data: secrets } = await supabase.functions.invoke(
+        "sk.eyJ1IjoiZGplZG91NzUiLCJhIjoiY21odzZibmo4MDJ4dTJrc2Nyd3M1bDdjdiJ9.o4E5WXDHhjZzKHAPguDVCQ",
+      );
       const token = secrets?.token || import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
-      
+
       mapboxgl.accessToken = token;
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: "mapbox://styles/mapbox/streets-v12",
         center: [property.longitude, property.latitude],
-        zoom: 14
+        zoom: 14,
       });
 
       // Add marker
-      new mapboxgl.Marker({ color: '#2B8A3E' })
+      new mapboxgl.Marker({ color: "#2B8A3E" })
         .setLngLat([property.longitude, property.latitude])
-        .setPopup(
-          new mapboxgl.Popup().setHTML(`<h3 class="font-semibold">${property.titre}</h3>`)
-        )
+        .setPopup(new mapboxgl.Popup().setHTML(`<h3 class="font-semibold">${property.titre}</h3>`))
         .addTo(map.current);
 
       // Add navigation controls
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
     } catch (error) {
-      console.error('Error initializing map:', error);
+      console.error("Error initializing map:", error);
     }
   };
 
   const fetchPropertyDetails = async () => {
     try {
       const { data: propertyData, error: propertyError } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('id', id)
+        .from("properties")
+        .select("*")
+        .eq("id", id)
         .single();
 
       if (propertyError) throw propertyError;
@@ -90,15 +90,15 @@ const PropertyDetail = () => {
 
       // Fetch gestionnaire profile
       const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', propertyData.gestionnaire_id)
+        .from("profiles")
+        .select("*")
+        .eq("user_id", propertyData.gestionnaire_id)
         .single();
 
       setGestionnaire(profileData);
     } catch (error: any) {
-      console.error('Error fetching property:', error);
-      toast.error('Erreur lors du chargement des détails');
+      console.error("Error fetching property:", error);
+      toast.error("Erreur lors du chargement des détails");
     } finally {
       setLoading(false);
     }
@@ -107,13 +107,13 @@ const PropertyDetail = () => {
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error('Vous devez être connecté pour contacter le gestionnaire');
-      navigate('/auth');
+      toast.error("Vous devez être connecté pour contacter le gestionnaire");
+      navigate("/auth");
       return;
     }
 
     if (!message.trim()) {
-      toast.error('Veuillez saisir un message');
+      toast.error("Veuillez saisir un message");
       return;
     }
 
@@ -121,11 +121,11 @@ const PropertyDetail = () => {
     try {
       // Check if conversation exists
       const { data: existingConversation } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('property_id', id)
-        .eq('locataire_id', user.id)
-        .eq('gestionnaire_id', property.gestionnaire_id)
+        .from("conversations")
+        .select("id")
+        .eq("property_id", id)
+        .eq("locataire_id", user.id)
+        .eq("gestionnaire_id", property.gestionnaire_id)
         .maybeSingle();
 
       let conversationId = existingConversation?.id;
@@ -133,19 +133,15 @@ const PropertyDetail = () => {
       // Create conversation if doesn't exist
       if (!conversationId) {
         // Get space_id from the property
-        const { data: propertyData } = await supabase
-          .from('properties')
-          .select('space_id')
-          .eq('id', id)
-          .single();
+        const { data: propertyData } = await supabase.from("properties").select("space_id").eq("id", id).single();
 
         const { data: newConversation, error: convError } = await supabase
-          .from('conversations')
+          .from("conversations")
           .insert({
             property_id: id,
             locataire_id: user.id,
             gestionnaire_id: property.gestionnaire_id,
-            space_id: propertyData?.space_id
+            space_id: propertyData?.space_id,
           })
           .select()
           .single();
@@ -155,22 +151,20 @@ const PropertyDetail = () => {
       }
 
       // Send message
-      const { error: messageError } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          content: message
-        });
+      const { error: messageError } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: message,
+      });
 
       if (messageError) throw messageError;
 
-      toast.success('Message envoyé avec succès');
-      setMessage('');
-      navigate('/messages');
+      toast.success("Message envoyé avec succès");
+      setMessage("");
+      navigate("/messages");
     } catch (error: any) {
-      console.error('Error sending message:', error);
-      toast.error('Erreur lors de l\'envoi du message');
+      console.error("Error sending message:", error);
+      toast.error("Erreur lors de l'envoi du message");
     } finally {
       setSending(false);
     }
@@ -201,9 +195,7 @@ const PropertyDetail = () => {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <p className="text-lg text-muted-foreground mb-4">Propriété introuvable</p>
-          <Button onClick={() => navigate('/properties')}>
-            Retour aux annonces
-          </Button>
+          <Button onClick={() => navigate("/properties")}>Retour aux annonces</Button>
         </div>
       </div>
     );
@@ -220,27 +212,21 @@ const PropertyDetail = () => {
           >
             <X className="h-8 w-8" />
           </button>
-          
-          <button
-            onClick={prevImage}
-            className="absolute left-4 text-white hover:text-primary transition-colors"
-          >
+
+          <button onClick={prevImage} className="absolute left-4 text-white hover:text-primary transition-colors">
             <ChevronLeft className="h-12 w-12" />
           </button>
-          
+
           <img
             src={property.images[selectedImage]}
             alt={`${property.titre} - Image ${selectedImage + 1}`}
             className="max-h-[90vh] max-w-[90vw] object-contain"
           />
-          
-          <button
-            onClick={nextImage}
-            className="absolute right-4 text-white hover:text-primary transition-colors"
-          >
+
+          <button onClick={nextImage} className="absolute right-4 text-white hover:text-primary transition-colors">
             <ChevronRight className="h-12 w-12" />
           </button>
-          
+
           <div className="absolute bottom-4 text-white text-sm">
             {selectedImage + 1} / {property.images.length}
           </div>
@@ -257,17 +243,17 @@ const PropertyDetail = () => {
               if (window.history.length > 2) {
                 navigate(-1);
               } else {
-                navigate('/dashboard');
+                navigate("/dashboard");
               }
             } else {
               // For unauthenticated users, go to home/landing page
-              navigate('/');
+              navigate("/");
             }
           }}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          {user ? 'Retour' : 'Accueil'}
+          {user ? "Retour" : "Accueil"}
         </Button>
 
         {/* Image Gallery */}
@@ -287,7 +273,7 @@ const PropertyDetail = () => {
                   <Maximize2 className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
-              
+
               {property.images.slice(1, 5).map((image: string, index: number) => (
                 <div
                   key={index}
@@ -328,17 +314,15 @@ const PropertyDetail = () => {
                   </div>
                 </div>
                 <Badge
-                  variant={property.statut === 'disponible' ? 'default' : 'secondary'}
+                  variant={property.statut === "disponible" ? "default" : "secondary"}
                   className="text-lg px-4 py-2"
                 >
-                  {property.statut === 'disponible' ? 'Disponible' : 'Loué'}
+                  {property.statut === "disponible" ? "Disponible" : "Loué"}
                 </Badge>
               </div>
 
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-primary">
-                  {property.prix_mensuel.toLocaleString()} FCFA
-                </span>
+                <span className="text-4xl font-bold text-primary">{property.prix_mensuel.toLocaleString()} FCFA</span>
                 <span className="text-muted-foreground">/mois</span>
               </div>
             </div>
@@ -363,7 +347,7 @@ const PropertyDetail = () => {
                     <Maximize2 className="h-5 w-5 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Surface</p>
-                      <p className="font-semibold">{property.surface_m2 || 'N/A'} m²</p>
+                      <p className="font-semibold">{property.surface_m2 || "N/A"} m²</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -419,10 +403,7 @@ const PropertyDetail = () => {
                   <CardTitle>Localisation</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div
-                    ref={mapContainer}
-                    className="w-full h-[400px] rounded-lg"
-                  />
+                  <div ref={mapContainer} className="w-full h-[400px] rounded-lg" />
                 </CardContent>
               </Card>
             )}
@@ -452,9 +433,7 @@ const PropertyDetail = () => {
 
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Votre message
-                    </label>
+                    <label className="text-sm font-medium mb-2 block">Votre message</label>
                     <Textarea
                       placeholder="Bonjour, je suis intéressé par cette propriété..."
                       value={message}
@@ -464,12 +443,8 @@ const PropertyDetail = () => {
                     />
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={sending || !message.trim()}
-                  >
-                    {sending ? 'Envoi...' : 'Envoyer le message'}
+                  <Button type="submit" className="w-full" disabled={sending || !message.trim()}>
+                    {sending ? "Envoi..." : "Envoyer le message"}
                   </Button>
 
                   {!user && (
