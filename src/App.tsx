@@ -27,6 +27,7 @@ import Favorites from "./pages/Favorites";
 import FavoritesCompare from "./pages/FavoritesCompare";
 import ManageSpace from "./pages/ManageSpace";
 import AcceptInvitation from "./pages/AcceptInvitation";
+import Finance from "./pages/Finance";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/favorites/compare" element={<FavoritesCompare />} />
             <Route path="/manage-space" element={<ManageSpace />} />
             <Route path="/accept-invitation" element={<AcceptInvitation />} />
+            <Route path="/finance" element={<Finance />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

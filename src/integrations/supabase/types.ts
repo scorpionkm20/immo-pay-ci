@@ -419,6 +419,54 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_reminders: {
+        Row: {
+          created_at: string
+          date_relance: string
+          id: string
+          message: string
+          payment_id: string
+          space_id: string
+          statut: string
+          type_relance: string
+        }
+        Insert: {
+          created_at?: string
+          date_relance?: string
+          id?: string
+          message: string
+          payment_id: string
+          space_id: string
+          statut?: string
+          type_relance: string
+        }
+        Update: {
+          created_at?: string
+          date_relance?: string
+          id?: string
+          message?: string
+          payment_id?: string
+          space_id?: string
+          statut?: string
+          type_relance?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reminders_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reminders_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           created_at: string
@@ -594,6 +642,117 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "properties_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_amortization: {
+        Row: {
+          created_at: string
+          date_acquisition: string
+          duree_amortissement: number
+          id: string
+          property_id: string
+          space_id: string
+          updated_at: string
+          valeur_acquisition: number
+          valeur_residuelle: number | null
+        }
+        Insert: {
+          created_at?: string
+          date_acquisition: string
+          duree_amortissement?: number
+          id?: string
+          property_id: string
+          space_id: string
+          updated_at?: string
+          valeur_acquisition: number
+          valeur_residuelle?: number | null
+        }
+        Update: {
+          created_at?: string
+          date_acquisition?: string
+          duree_amortissement?: number
+          id?: string
+          property_id?: string
+          space_id?: string
+          updated_at?: string
+          valeur_acquisition?: number
+          valeur_residuelle?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_amortization_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_amortization_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_charges: {
+        Row: {
+          created_at: string
+          date_charge: string
+          description: string | null
+          facture_url: string | null
+          frequence: string | null
+          id: string
+          montant: number
+          property_id: string
+          recurrent: boolean
+          space_id: string
+          type_charge: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_charge: string
+          description?: string | null
+          facture_url?: string | null
+          frequence?: string | null
+          id?: string
+          montant: number
+          property_id: string
+          recurrent?: boolean
+          space_id: string
+          type_charge: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_charge?: string
+          description?: string | null
+          facture_url?: string | null
+          frequence?: string | null
+          id?: string
+          montant?: number
+          property_id?: string
+          recurrent?: boolean
+          space_id?: string
+          type_charge?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_charges_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_charges_space_id_fkey"
             columns: ["space_id"]
             isOneToOne: false
             referencedRelation: "management_spaces"
