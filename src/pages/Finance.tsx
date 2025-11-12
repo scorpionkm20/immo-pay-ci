@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useManagementSpaces } from '@/hooks/useManagementSpaces';
 import { useFinancialData } from '@/hooks/useFinancialData';
+import { useFinancialForecasts } from '@/hooks/useFinancialForecasts';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
+import { FinancialForecastChart } from '@/components/FinancialForecastChart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -15,10 +18,21 @@ import {
   Plus,
   Calendar,
   PieChart,
-  Loader2
+  Loader2,
+  AlertTriangle,
+  Info,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -37,6 +51,11 @@ const COLORS = ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981'];
 export default function Finance() {
   const { currentSpace } = useManagementSpaces();
   const { charges, amortizations, metrics, loading } = useFinancialData(currentSpace?.id);
+  const [forecastMonths, setForecastMonths] = useState(6);
+  const { historicalData, forecasts, alerts, loading: forecastsLoading } = useFinancialForecasts(
+    currentSpace?.id,
+    forecastMonths
+  );
   const [selectedPeriod, setSelectedPeriod] = useState('6months');
   const [generatingReport, setGeneratingReport] = useState(false);
 
@@ -219,10 +238,179 @@ export default function Finance() {
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList>
               <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+              <TabsTrigger value="forecasts">Prévisions</TabsTrigger>
               <TabsTrigger value="charges">Charges</TabsTrigger>
               <TabsTrigger value="amortization">Amortissement</TabsTrigger>
               <TabsTrigger value="overdue">Impayés</TabsTrigger>
             </TabsList>
+
+            {/* Forecasts Tab */}
+            <TabsContent value="forecasts" className="space-y-4">
+              {/* Alertes */}
+              {alerts.length > 0 && (
+                <div className="space-y-3">
+                  {alerts.map((alert, index) => (
+                    <Alert
+                      key={index}
+                      variant={alert.type === 'danger' ? 'destructive' : 'default'}
+                      className={
+                        alert.type === 'info' 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : alert.type === 'warning'
+                          ? 'border-orange-500 bg-orange-50'
+                          : ''
+                      }
+                    >
+                      {alert.type === 'danger' && <AlertTriangle className="h-4 w-4" />}
+                      {alert.type === 'warning' && <AlertCircle className="h-4 w-4" />}
+                      {alert.type === 'info' && <Info className="h-4 w-4" />}
+                      <AlertTitle className="flex items-center gap-2">
+                        {alert.title}
+                        {alert.trend !== undefined && (
+                          <Badge variant={alert.trend > 0 ? 'default' : 'destructive'}>
+                            {alert.trend > 0 ? (
+                              <ArrowUpRight className="h-3 w-3 mr-1" />
+                            ) : (
+                              <ArrowDownRight className="h-3 w-3 mr-1" />
+                            )}
+                            {Math.abs(alert.trend).toFixed(1)}%
+                          </Badge>
+                        )}
+                      </AlertTitle>
+                      <AlertDescription>{alert.message}</AlertDescription>
+                    </Alert>
+                  ))}
+                </div>
+              )}
+
+              {/* Contrôle de période */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Configuration des Prévisions</CardTitle>
+                      <CardDescription>
+                        Ajustez la période de projection
+                      </CardDescription>
+                    </div>
+                    <Select
+                      value={forecastMonths.toString()}
+                      onValueChange={(value) => setForecastMonths(parseInt(value))}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3">3 mois</SelectItem>
+                        <SelectItem value="6">6 mois</SelectItem>
+                        <SelectItem value="9">9 mois</SelectItem>
+                        <SelectItem value="12">12 mois</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+              </Card>
+
+              {forecastsLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : historicalData.length < 3 ? (
+                <Card>
+                  <CardContent className="py-12">
+                    <div className="text-center text-muted-foreground">
+                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p className="font-medium">Données insuffisantes</p>
+                      <p className="text-sm mt-2">
+                        Au moins 3 mois de données historiques sont nécessaires pour générer des prévisions
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {/* Graphiques de prévision */}
+                  <div className="grid grid-cols-1 gap-4">
+                    <FinancialForecastChart
+                      historicalData={historicalData}
+                      forecasts={forecasts}
+                      metric="revenue"
+                    />
+                    <FinancialForecastChart
+                      historicalData={historicalData}
+                      forecasts={forecasts}
+                      metric="charges"
+                    />
+                    <FinancialForecastChart
+                      historicalData={historicalData}
+                      forecasts={forecasts}
+                      metric="profit"
+                    />
+                    <FinancialForecastChart
+                      historicalData={historicalData}
+                      forecasts={forecasts}
+                      metric="cashflow"
+                    />
+                  </div>
+
+                  {/* Tableau des prévisions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Détail des Prévisions</CardTitle>
+                      <CardDescription>
+                        Projection mois par mois avec niveau de confiance
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Mois</TableHead>
+                            <TableHead>Revenus projetés</TableHead>
+                            <TableHead>Charges projetées</TableHead>
+                            <TableHead>Bénéfice projeté</TableHead>
+                            <TableHead>Cash-flow cumulé</TableHead>
+                            <TableHead>Confiance</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {forecasts.map((forecast) => (
+                            <TableRow key={forecast.month}>
+                              <TableCell className="font-medium">
+                                {format(forecast.date, 'MMMM yyyy', { locale: fr })}
+                              </TableCell>
+                              <TableCell className="amount">
+                                {forecast.projectedRevenue.toLocaleString()} FCFA
+                              </TableCell>
+                              <TableCell className="amount negative">
+                                {forecast.projectedCharges.toLocaleString()} FCFA
+                              </TableCell>
+                              <TableCell className={`amount ${forecast.projectedProfit >= 0 ? '' : 'negative'}`}>
+                                {forecast.projectedProfit.toLocaleString()} FCFA
+                              </TableCell>
+                              <TableCell className={`amount ${forecast.projectedCashFlow >= 0 ? '' : 'negative'}`}>
+                                {forecast.projectedCashFlow.toLocaleString()} FCFA
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={
+                                    forecast.confidence >= 80 ? 'default' : 
+                                    forecast.confidence >= 60 ? 'secondary' : 
+                                    'outline'
+                                  }
+                                >
+                                  {forecast.confidence}%
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+            </TabsContent>
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-4">
