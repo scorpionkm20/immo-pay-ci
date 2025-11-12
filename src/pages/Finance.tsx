@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useManagementSpaces } from '@/hooks/useManagementSpaces';
 import { useFinancialData } from '@/hooks/useFinancialData';
+import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,9 +14,11 @@ import {
   Download,
   Plus,
   Calendar,
-  PieChart
+  PieChart,
+  Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -35,6 +38,42 @@ export default function Finance() {
   const { currentSpace } = useManagementSpaces();
   const { charges, amortizations, metrics, loading } = useFinancialData(currentSpace?.id);
   const [selectedPeriod, setSelectedPeriod] = useState('6months');
+  const [generatingReport, setGeneratingReport] = useState(false);
+
+  const handleGenerateReport = async () => {
+    if (!currentSpace) return;
+
+    setGeneratingReport(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vous devez être connecté');
+        return;
+      }
+
+      const response = await supabase.functions.invoke('generate-financial-report', {
+        body: {
+          spaceId: currentSpace.id,
+          period: selectedPeriod,
+        },
+      });
+
+      if (response.error) throw response.error;
+
+      // Ouvrir le rapport dans un nouvel onglet
+      const reportWindow = window.open('', '_blank');
+      if (reportWindow) {
+        reportWindow.document.write(response.data);
+        reportWindow.document.close();
+        toast.success('Rapport généré avec succès');
+      }
+    } catch (error: any) {
+      console.error('Erreur:', error);
+      toast.error('Impossible de générer le rapport');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
 
   if (!currentSpace) {
     return (
@@ -97,9 +136,18 @@ export default function Finance() {
                 Analyse complète de la rentabilité de {currentSpace.nom}
               </p>
             </div>
-            <Button>
-              <Download className="h-4 w-4 mr-2" />
-              Export PDF
+            <Button onClick={handleGenerateReport} disabled={generatingReport}>
+              {generatingReport ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Génération...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Générer Rapport PDF
+                </>
+              )}
             </Button>
           </div>
 
