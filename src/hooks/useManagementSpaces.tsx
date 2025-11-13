@@ -9,6 +9,7 @@ export interface ManagementSpace {
   created_by: string;
   created_at: string;
   updated_at: string;
+  invitation_code: string | null;
 }
 
 export interface SpaceMember {

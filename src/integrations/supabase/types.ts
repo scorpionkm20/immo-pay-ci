@@ -284,6 +284,7 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          invitation_code: string | null
           nom: string
           updated_at: string
         }
@@ -292,6 +293,7 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          invitation_code?: string | null
           nom: string
           updated_at?: string
         }
@@ -300,6 +302,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          invitation_code?: string | null
           nom?: string
           updated_at?: string
         }
@@ -1084,6 +1087,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_invitation_code: { Args: never; Returns: string }
       get_user_spaces: {
         Args: { _user_id: string }
         Returns: {
@@ -1108,6 +1112,13 @@ export type Database = {
       is_space_member: {
         Args: { _space_id: string; _user_id: string }
         Returns: boolean
+      }
+      join_space_with_code: {
+        Args: {
+          code: string
+          user_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string
       }
       migrate_to_spaces: { Args: never; Returns: undefined }
       property_matches_alert: {
