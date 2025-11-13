@@ -16,7 +16,7 @@ export interface SpaceMember {
   id: string;
   space_id: string;
   user_id: string;
-  role: 'gestionnaire' | 'proprietaire' | 'locataire';
+  role: 'admin' | 'gestionnaire' | 'proprietaire' | 'locataire';
   created_at: string;
 }
 
@@ -202,7 +202,7 @@ export const useManagementSpaces = () => {
     return { data, error: null };
   };
 
-  const addMember = async (spaceId: string, userId: string, role: 'gestionnaire' | 'proprietaire' | 'locataire') => {
+  const addMember = async (spaceId: string, userId: string, role: 'admin' | 'gestionnaire' | 'proprietaire' | 'locataire') => {
     const { error } = await supabase
       .from('space_members')
       .insert([{

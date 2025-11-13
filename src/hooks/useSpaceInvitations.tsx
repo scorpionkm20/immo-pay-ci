@@ -7,7 +7,7 @@ interface SpaceInvitation {
   space_id: string;
   invited_by: string;
   email: string;
-  role: 'gestionnaire' | 'proprietaire' | 'locataire';
+  role: 'admin' | 'gestionnaire' | 'proprietaire' | 'locataire';
   token: string;
   expires_at: string;
   accepted: boolean;
@@ -49,7 +49,7 @@ export const useSpaceInvitations = (spaceId?: string) => {
 
   const createInvitation = async (
     email: string,
-    role: 'gestionnaire' | 'proprietaire' | 'locataire'
+    role: 'admin' | 'gestionnaire' | 'proprietaire' | 'locataire'
   ): Promise<string | null> => {
     if (!spaceId) return null;
 

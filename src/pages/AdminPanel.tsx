@@ -41,7 +41,7 @@ const AdminPanel = () => {
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .eq('role', 'admin')
+      .eq('role', 'admin' as any)
       .single();
 
     if (error || !data) {
@@ -108,10 +108,10 @@ const AdminPanel = () => {
 
       if (deleteError) throw deleteError;
 
-      // Insert new role
+      // Insert new role (using type assertion since the type will be updated)
       const { error: insertError } = await supabase
         .from('user_roles')
-        .insert([{ user_id: userId, role: newRole }]);
+        .insert([{ user_id: userId, role: newRole as any }]);
 
       if (insertError) throw insertError;
 

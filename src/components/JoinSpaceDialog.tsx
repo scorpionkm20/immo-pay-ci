@@ -16,7 +16,7 @@ interface JoinSpaceDialogProps {
 
 export const JoinSpaceDialog = ({ open, onOpenChange, onSuccess }: JoinSpaceDialogProps) => {
   const [code, setCode] = useState('');
-  const [role, setRole] = useState<'gestionnaire' | 'proprietaire' | 'locataire'>('locataire');
+  const [role, setRole] = useState<'admin' | 'gestionnaire' | 'proprietaire' | 'locataire'>('locataire');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -85,6 +85,7 @@ export const JoinSpaceDialog = ({ open, onOpenChange, onSuccess }: JoinSpaceDial
                   <SelectItem value="locataire">Locataire</SelectItem>
                   <SelectItem value="proprietaire">Propriétaire</SelectItem>
                   <SelectItem value="gestionnaire">Gestionnaire</SelectItem>
+                  <SelectItem value="admin">Administrateur</SelectItem>
                 </SelectContent>
               </Select>
             </div>
