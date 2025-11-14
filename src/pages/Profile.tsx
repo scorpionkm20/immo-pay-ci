@@ -17,14 +17,20 @@ const profileSchema = z.object({
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, userRole, signOut, updateProfile } = useAuth();
+  const { user, userRole, signOut, updateProfile, changePassword } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const [profileData, setProfileData] = useState({
     fullName: '',
     phone: '',
     avatarUrl: ''
   });
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
   const [errors, setErrors] = useState<any>({});
+  const [passwordErrors, setPasswordErrors] = useState<any>({});
 
   useEffect(() => {
     if (!user) {
@@ -77,6 +83,31 @@ const Profile = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordErrors({});
+
+    // Validation
+    if (passwordData.newPassword.length < 6) {
+      setPasswordErrors({ newPassword: 'Le mot de passe doit contenir au moins 6 caractères' });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordErrors({ confirmPassword: 'Les mots de passe ne correspondent pas' });
+      return;
+    }
+
+    setPasswordLoading(true);
+    const { error } = await changePassword(passwordData.newPassword);
+    setPasswordLoading(false);
+
+    if (!error) {
+      // Reset form
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+    }
   };
 
   const getRoleBadgeVariant = (role: string | null) => {
@@ -181,6 +212,45 @@ const Profile = () => {
               </Button>
             </div>
           </form>
+
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="font-semibold mb-4">Changer le mot de passe</h3>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  placeholder="Minimum 6 caractères"
+                  required
+                />
+                {passwordErrors.newPassword && (
+                  <p className="text-sm text-destructive">{passwordErrors.newPassword}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  placeholder="Retapez le mot de passe"
+                  required
+                />
+                {passwordErrors.confirmPassword && (
+                  <p className="text-sm text-destructive">{passwordErrors.confirmPassword}</p>
+                )}
+              </div>
+
+              <Button type="submit" variant="outline" className="w-full" disabled={passwordLoading}>
+                {passwordLoading ? 'Changement...' : 'Changer le mot de passe'}
+              </Button>
+            </form>
+          </div>
 
           <div className="mt-6 pt-6 border-t">
             <Button variant="destructive" className="w-full" onClick={handleSignOut}>

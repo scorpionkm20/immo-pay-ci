@@ -12,6 +12,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (fullName: string, phone: string, avatarUrl?: string) => Promise<{ error: any }>;
+  changePassword: (newPassword: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -161,8 +162,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
+  const changePassword = async (newPassword: string) => {
+    if (!user) return { error: new Error('No user logged in') };
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur de changement de mot de passe",
+        description: error.message
+      });
+    } else {
+      toast({
+        title: "Mot de passe changé",
+        description: "Votre mot de passe a été mis à jour avec succès."
+      });
+    }
+
+    return { error };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, userRole, loading, signUp, signIn, signOut, updateProfile }}>
+    <AuthContext.Provider value={{ user, session, userRole, loading, signUp, signIn, signOut, updateProfile, changePassword }}>
       {children}
     </AuthContext.Provider>
   );
