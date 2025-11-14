@@ -32,7 +32,7 @@ const AdminPanel = () => {
 
   const checkAdminAccess = async () => {
     if (!user) {
-      navigate('/auth');
+      navigate('/auth?redirect=/admin');
       return;
     }
 
