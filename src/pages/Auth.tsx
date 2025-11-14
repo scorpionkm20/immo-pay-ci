@@ -94,7 +94,9 @@ const Auth = () => {
     setLoading(false);
 
     if (!error) {
-      navigate('/');
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirect = urlParams.get('redirect') || '/';
+      navigate(redirect);
     }
   };
 
