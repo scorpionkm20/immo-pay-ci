@@ -6,9 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield, UserCog } from 'lucide-react';
+import { Loader2, Shield, UserCog, Search, History, Filter } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface UserWithRole {
   id: string;
@@ -18,13 +22,29 @@ interface UserWithRole {
   created_at: string;
 }
 
+interface RoleHistory {
+  id: string;
+  user_id: string;
+  old_role: string | null;
+  new_role: string;
+  changed_by: string;
+  changed_at: string;
+  user_name?: string;
+  changed_by_name?: string;
+}
+
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [history, setHistory] = useState<RoleHistory[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -61,7 +81,6 @@ const AdminPanel = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Fetch all users with their profiles and roles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, full_name');
@@ -74,12 +93,11 @@ const AdminPanel = () => {
 
       if (rolesError) throw rolesError;
 
-      // Get users from auth (admin only can do this via service role, so we use profiles)
       const usersData = profiles.map(profile => {
         const userRole = roles.find(r => r.user_id === profile.user_id);
         return {
           id: profile.user_id,
-          email: '', // We can't fetch emails without service role
+          email: '',
           full_name: profile.full_name || 'Utilisateur sans nom',
           role: userRole?.role || 'locataire',
           created_at: new Date().toISOString()
@@ -87,6 +105,7 @@ const AdminPanel = () => {
       });
 
       setUsers(usersData);
+      setFilteredUsers(usersData);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -98,9 +117,66 @@ const AdminPanel = () => {
     }
   };
 
+  const fetchRoleHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const { data: historyData, error } = await supabase
+        .from('user_role_history')
+        .select('*')
+        .order('changed_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      // Fetch user names
+      const userIds = new Set([
+        ...historyData.map(h => h.user_id),
+        ...historyData.map(h => h.changed_by)
+      ]);
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', Array.from(userIds));
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
+
+      const enrichedHistory = historyData.map(h => ({
+        ...h,
+        user_name: profileMap.get(h.user_id) || 'Utilisateur inconnu',
+        changed_by_name: profileMap.get(h.changed_by) || 'Système'
+      }));
+
+      setHistory(enrichedHistory);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de charger l\'historique'
+      });
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    let filtered = users;
+
+    if (searchTerm) {
+      filtered = filtered.filter(user =>
+        user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => user.role === roleFilter);
+    }
+
+    setFilteredUsers(filtered);
+  }, [searchTerm, roleFilter, users]);
+
   const updateUserRole = async (userId: string, newRole: string) => {
     try {
-      // Delete existing role
       const { error: deleteError } = await supabase
         .from('user_roles')
         .delete()
@@ -108,7 +184,6 @@ const AdminPanel = () => {
 
       if (deleteError) throw deleteError;
 
-      // Insert new role (using type assertion since the type will be updated)
       const { error: insertError } = await supabase
         .from('user_roles')
         .insert([{ user_id: userId, role: newRole as any }]);
@@ -121,6 +196,7 @@ const AdminPanel = () => {
       });
 
       fetchUsers();
+      fetchRoleHistory();
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -148,63 +224,156 @@ const AdminPanel = () => {
               <Shield className="h-6 w-6 text-primary" />
               <div>
                 <CardTitle>Panneau d'administration</CardTitle>
-                <CardDescription>Gérer les rôles des utilisateurs</CardDescription>
+                <CardDescription>Gérer les rôles et voir l'historique</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Aucun utilisateur trouvé
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Rôle actuel</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <UserCog className="h-4 w-4 text-muted-foreground" />
-                          {user.full_name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-primary/10 text-primary">
-                          {user.role}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) => updateUserRole(user.id, value)}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="gestionnaire">Gestionnaire</SelectItem>
-                            <SelectItem value="proprietaire">Propriétaire</SelectItem>
-                            <SelectItem value="locataire">Locataire</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <Tabs defaultValue="users" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="users">
+                  <UserCog className="h-4 w-4 mr-2" />
+                  Utilisateurs
+                </TabsTrigger>
+                <TabsTrigger value="history" onClick={() => !history.length && fetchRoleHistory()}>
+                  <History className="h-4 w-4 mr-2" />
+                  Historique
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="users" className="space-y-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher un utilisateur..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="w-full md:w-[200px]">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Filtrer par rôle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les rôles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="gestionnaire">Gestionnaire</SelectItem>
+                      <SelectItem value="proprietaire">Propriétaire</SelectItem>
+                      <SelectItem value="locataire">Locataire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucun utilisateur trouvé
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nom</TableHead>
+                          <TableHead>Rôle actuel</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <UserCog className="h-4 w-4 text-muted-foreground" />
+                                {user.full_name}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-primary/10 text-primary">
+                                {user.role}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={user.role}
+                                onValueChange={(value) => updateUserRole(user.id, value)}
+                              >
+                                <SelectTrigger className="w-[180px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  <SelectItem value="gestionnaire">Gestionnaire</SelectItem>
+                                  <SelectItem value="proprietaire">Propriétaire</SelectItem>
+                                  <SelectItem value="locataire">Locataire</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="history">
+                {loadingHistory ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : history.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucun historique disponible
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Utilisateur</TableHead>
+                          <TableHead>Ancien rôle</TableHead>
+                          <TableHead>Nouveau rôle</TableHead>
+                          <TableHead>Modifié par</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {history.map((entry) => (
+                          <TableRow key={entry.id}>
+                            <TableCell className="text-sm">
+                              {format(new Date(entry.changed_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                            </TableCell>
+                            <TableCell className="font-medium">{entry.user_name}</TableCell>
+                            <TableCell>
+                              {entry.old_role ? (
+                                <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-muted text-muted-foreground">
+                                  {entry.old_role}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">Aucun</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-primary/10 text-primary">
+                                {entry.new_role}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-sm">{entry.changed_by_name}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
