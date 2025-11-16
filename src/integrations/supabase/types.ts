@@ -1117,6 +1117,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_new_space: {
+        Args: { space_description?: string; space_name: string }
+        Returns: string
+      }
       generate_invitation_code: { Args: never; Returns: string }
       get_user_spaces: {
         Args: { _user_id: string }

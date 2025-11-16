@@ -90,14 +90,12 @@ export const useManagementSpaces = () => {
       return { data: null, error: new Error("Not authenticated") };
     }
 
-    const { data, error } = await supabase
-      .from('management_spaces')
-      .insert([{
-        ...spaceData,
-        created_by: user.id
-      }])
-      .select()
-      .single();
+    // Utiliser la fonction RPC sécurisée au lieu de l'INSERT direct
+    const { data: spaceId, error } = await supabase
+      .rpc('create_new_space', {
+        space_name: spaceData.nom,
+        space_description: spaceData.description || null
+      });
 
     if (error) {
       toast({
@@ -108,16 +106,32 @@ export const useManagementSpaces = () => {
       return { data: null, error };
     }
 
+    // Récupérer les détails de l'espace créé
+    const { data: newSpace, error: fetchError } = await supabase
+      .from('management_spaces')
+      .select('*')
+      .eq('id', spaceId)
+      .single();
+
+    if (fetchError || !newSpace) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de récupérer l'espace créé"
+      });
+      return { data: null, error: fetchError };
+    }
+
     toast({
       title: "Espace créé",
       description: "Votre espace de gestion a été créé avec succès"
     });
 
     // Set as current space
-    setCurrentSpace(data);
-    localStorage.setItem('currentSpaceId', data.id);
+    setCurrentSpace(newSpace);
+    localStorage.setItem('currentSpaceId', newSpace.id);
 
-    return { data, error: null };
+    return { data: newSpace, error: null };
   };
 
   const updateSpace = async (id: string, updates: Partial<ManagementSpace>) => {
