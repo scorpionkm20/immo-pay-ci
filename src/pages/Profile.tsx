@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { AvatarUpload } from '@/components/AvatarUpload';
+import { Sparkles } from 'lucide-react';
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(2, { message: "Le nom doit contenir au moins 2 caractères" }).max(100),
@@ -151,6 +152,27 @@ const Profile = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* AI Bedroom Designer Button - Only for Tenants */}
+          {userRole === 'locataire' && (
+            <div className="mb-6 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
+              <div className="flex items-start gap-3">
+                <Sparkles className="h-6 w-6 text-primary mt-1" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">Assistant Design de Chambre IA</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Transformez votre chambre avec l'intelligence artificielle
+                  </p>
+                  <Button 
+                    onClick={() => navigate('/bedroom-designer')}
+                    className="w-full"
+                  >
+                    Commencer le Design
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             <AvatarUpload
               userId={user.id}
