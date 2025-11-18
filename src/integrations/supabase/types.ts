@@ -801,6 +801,42 @@ export type Database = {
           },
         ]
       }
+      saved_bedroom_designs: {
+        Row: {
+          created_at: string
+          design_name: string
+          designed_image_url: string
+          id: string
+          original_image_url: string
+          style_description: string | null
+          style_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          design_name: string
+          designed_image_url: string
+          id?: string
+          original_image_url: string
+          style_description?: string | null
+          style_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          design_name?: string
+          designed_image_url?: string
+          id?: string
+          original_image_url?: string
+          style_description?: string | null
+          style_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       search_alerts: {
         Row: {
           actif: boolean | null

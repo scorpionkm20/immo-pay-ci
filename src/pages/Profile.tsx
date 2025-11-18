@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { Sparkles } from 'lucide-react';
+import { SavedDesignsGallery } from '@/components/SavedDesignsGallery';
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(2, { message: "Le nom doit contenir au moins 2 caractères" }).max(100),
@@ -281,6 +282,11 @@ const Profile = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Saved Designs Gallery - Only for tenants */}
+      {userRole === 'locataire' && (
+        <SavedDesignsGallery />
+      )}
     </div>
   );
 };
