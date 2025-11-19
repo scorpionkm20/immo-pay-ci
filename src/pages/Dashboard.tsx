@@ -7,11 +7,12 @@ import { useSpaceStats } from '@/hooks/useSpaceStats';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navbar } from '@/components/Navbar';
-import { Building2, Users, FileText, DollarSign, Wrench, TrendingUp, Home, Clock, AlertCircle, Percent, Download, BarChart3 } from 'lucide-react';
+import { Building2, Users, FileText, DollarSign, Wrench, TrendingUp, Home, Clock, AlertCircle, Percent, Download, BarChart3, Sparkles } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { SavedDesignsGallery } from '@/components/SavedDesignsGallery';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -326,6 +327,28 @@ const Dashboard = () => {
               </Card>
             </div>
           </>
+        )}
+
+        {/* Locataire Section - AI Bedroom Designer */}
+        {userRole === 'locataire' && (
+          <div className="mb-8 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>AI Bedroom Designer</CardTitle>
+                <CardDescription>
+                  Transformez votre chambre avec l'intelligence artificielle
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => navigate('/bedroom-designer')} className="w-full">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Commencer le Design
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <SavedDesignsGallery />
+          </div>
         )}
 
         {/* Stats Cards */}
