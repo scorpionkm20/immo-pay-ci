@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { useState } from "react";
 import { useManagementSpaces } from "@/hooks/useManagementSpaces";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -38,6 +39,7 @@ export const SpaceSelector = () => {
   const [invitationCode, setInvitationCode] = useState("");
   const [showInvitationCode, setShowInvitationCode] = useState(false);
   const { spaces, currentSpace, switchSpace, createSpace, loading, refetch } = useManagementSpaces();
+  const { userRole } = useAuth();
 
   const handleCreateSpace = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,17 +123,19 @@ export const SpaceSelector = () => {
               ))}
             </CommandGroup>
             <div className="p-2 border-t space-y-1">
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => {
-                  setOpen(false);
-                  setCreateDialogOpen(true);
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Créer un nouvel espace
-              </Button>
+              {userRole !== 'locataire' && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setOpen(false);
+                    setCreateDialogOpen(true);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Créer un nouvel espace
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 className="w-full justify-start"
