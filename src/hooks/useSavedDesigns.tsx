@@ -10,6 +10,8 @@ export interface SavedDesign {
   style_description: string | null;
   original_image_url: string;
   designed_image_url: string;
+  rating: number | null;
+  comments: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -186,12 +188,64 @@ export const useSavedDesigns = () => {
     }
   };
 
+  const updateDesignRating = async (id: string, rating: number) => {
+    try {
+      const { error } = await supabase
+        .from('saved_bedroom_designs')
+        .update({ rating })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Notation enregistrée',
+        description: 'Votre note a été enregistrée avec succès',
+      });
+      
+      await fetchDesigns();
+    } catch (error: any) {
+      console.error('Error updating rating:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible d\'enregistrer la notation',
+      });
+    }
+  };
+
+  const updateDesignComments = async (id: string, comments: string) => {
+    try {
+      const { error } = await supabase
+        .from('saved_bedroom_designs')
+        .update({ comments })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Commentaire enregistré',
+        description: 'Votre commentaire a été enregistré avec succès',
+      });
+      
+      await fetchDesigns();
+    } catch (error: any) {
+      console.error('Error updating comments:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible d\'enregistrer le commentaire',
+      });
+    }
+  };
+
   return {
     designs,
     loading,
     saveDesign,
     deleteDesign,
     updateDesignName,
+    updateDesignRating,
+    updateDesignComments,
     refetch: fetchDesigns
   };
 };

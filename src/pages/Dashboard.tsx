@@ -329,28 +329,6 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* Locataire Section - AI Bedroom Designer */}
-        {userRole === 'locataire' && (
-          <div className="mb-8 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Bedroom Designer</CardTitle>
-                <CardDescription>
-                  Transformez votre chambre avec l'intelligence artificielle
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={() => navigate('/bedroom-designer')} className="w-full">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Commencer le Design
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <SavedDesignsGallery />
-          </div>
-        )}
-
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           {statsLoading ? (
@@ -526,6 +504,28 @@ const Dashboard = () => {
               </Card>
             </div>
           </>
+        )}
+
+        {/* Locataire Section - AI Bedroom Designer */}
+        {userRole === 'locataire' && (
+          <div className="mb-8 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>AI Bedroom Designer</CardTitle>
+                <CardDescription>
+                  Transformez votre chambre avec l'intelligence artificielle
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => navigate('/bedroom-designer')} className="w-full">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Commencer le Design
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <SavedDesignsGallery />
+          </div>
         )}
 
         {/* Actions rapides */}
