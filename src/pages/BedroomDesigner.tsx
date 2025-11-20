@@ -123,6 +123,13 @@ const BedroomDesigner = () => {
     if (!style) return;
 
     try {
+      console.log('Calling bedroom-designer function with style:', style.name);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Vous devez être connecté pour utiliser cette fonctionnalité');
+      }
+
       const { data, error } = await supabase.functions.invoke('bedroom-designer', {
         body: {
           action: 'apply_style',
@@ -132,7 +139,16 @@ const BedroomDesigner = () => {
         },
       });
 
-      if (error) throw error;
+      console.log('Response from bedroom-designer:', { data, error });
+
+      if (error) {
+        console.error('Function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       if (data?.designedImage) {
         setDesignedImage(data.designedImage);
@@ -140,12 +156,14 @@ const BedroomDesigner = () => {
           title: 'Succès!',
           description: `Style ${style.name} appliqué avec succès`,
         });
+      } else {
+        throw new Error('Aucune image générée');
       }
     } catch (error: any) {
       console.error('Error applying style:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'appliquer le style. Veuillez réessayer.',
+        description: error.message || 'Impossible d\'appliquer le style. Veuillez réessayer.',
         variant: 'destructive',
       });
     } finally {
@@ -170,6 +188,13 @@ const BedroomDesigner = () => {
     setSelectedStyle('surprise');
 
     try {
+      console.log('Calling bedroom-designer for surprise');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Vous devez être connecté pour utiliser cette fonctionnalité');
+      }
+
       const { data, error } = await supabase.functions.invoke('bedroom-designer', {
         body: {
           action: 'surprise',
@@ -179,7 +204,16 @@ const BedroomDesigner = () => {
         },
       });
 
-      if (error) throw error;
+      console.log('Response from bedroom-designer:', { data, error });
+
+      if (error) {
+        console.error('Function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       if (data?.designedImage) {
         setDesignedImage(data.designedImage);
@@ -187,12 +221,14 @@ const BedroomDesigner = () => {
           title: 'Surprise! 🎉',
           description: `Mélange créatif: ${randomStyle1.name} + ${randomStyle2.name}`,
         });
+      } else {
+        throw new Error('Aucune image générée');
       }
     } catch (error: any) {
       console.error('Error with surprise:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de générer la surprise. Veuillez réessayer.',
+        description: error.message || 'Impossible de générer la surprise. Veuillez réessayer.',
         variant: 'destructive',
       });
     } finally {
@@ -210,6 +246,13 @@ const BedroomDesigner = () => {
     setChatLoading(true);
 
     try {
+      console.log('Calling bedroom-designer for refinement');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Vous devez être connecté pour utiliser cette fonctionnalité');
+      }
+
       const { data, error } = await supabase.functions.invoke('bedroom-designer', {
         body: {
           action: 'refine',
@@ -219,7 +262,16 @@ const BedroomDesigner = () => {
         },
       });
 
-      if (error) throw error;
+      console.log('Response from bedroom-designer:', { data, error });
+
+      if (error) {
+        console.error('Function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       if (data?.designedImage) {
         setDesignedImage(data.designedImage);
@@ -227,12 +279,14 @@ const BedroomDesigner = () => {
           role: 'assistant', 
           content: 'J\'ai appliqué vos modifications. Que pensez-vous du résultat?' 
         }]);
+      } else {
+        throw new Error('Aucune image générée');
       }
     } catch (error: any) {
       console.error('Error refining design:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'appliquer les modifications. Veuillez réessayer.',
+        description: error.message || 'Impossible d\'appliquer les modifications. Veuillez réessayer.',
         variant: 'destructive',
       });
       setChatMessages(prev => prev.slice(0, -1)); // Remove user message on error
