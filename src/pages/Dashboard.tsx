@@ -13,6 +13,8 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SavedDesignsGallery } from '@/components/SavedDesignsGallery';
+import { DesignStatistics } from '@/components/DesignStatistics';
+import { Paintbrush } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -509,21 +511,25 @@ const Dashboard = () => {
         {/* Locataire Section - AI Bedroom Designer */}
         {userRole === 'locataire' && (
           <div className="mb-8 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Bedroom Designer</CardTitle>
-                <CardDescription>
-                  Transformez votre chambre avec l'intelligence artificielle
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={() => navigate('/bedroom-designer')} className="w-full">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Commencer le Design
-                </Button>
-              </CardContent>
-            </Card>
-            
+            {/* AI Bedroom Designer & Saved Designs Section */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/bedroom-designer')}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Paintbrush className="h-5 w-5" />
+                    AI Bedroom Designer
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Transformez vos photos de chambres avec l'IA. Explorez différents styles et créez des designs uniques.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <DesignStatistics />
+            </div>
+
             <SavedDesignsGallery />
           </div>
         )}
