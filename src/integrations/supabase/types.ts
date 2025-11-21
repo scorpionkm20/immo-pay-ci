@@ -801,6 +801,60 @@ export type Database = {
           },
         ]
       }
+      rental_requests: {
+        Row: {
+          created_at: string
+          id: string
+          manager_id: string
+          message: string | null
+          property_id: string
+          proposed_start_date: string | null
+          request_status: string
+          space_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manager_id: string
+          message?: string | null
+          property_id: string
+          proposed_start_date?: string | null
+          request_status?: string
+          space_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manager_id?: string
+          message?: string | null
+          property_id?: string
+          proposed_start_date?: string | null
+          request_status?: string
+          space_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rental_requests_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_bedroom_designs: {
         Row: {
           comments: string | null
@@ -1159,6 +1213,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_rental_request: {
+        Args: {
+          p_caution_amount: number
+          p_monthly_rent: number
+          p_request_id: string
+          p_start_date: string
+        }
+        Returns: Json
+      }
       create_new_space: {
         Args: { space_description?: string; space_name: string }
         Returns: string
@@ -1203,6 +1266,10 @@ export type Database = {
           property_record: Database["public"]["Tables"]["properties"]["Row"]
         }
         Returns: boolean
+      }
+      reject_rental_request: {
+        Args: { p_rejection_reason?: string; p_request_id: string }
+        Returns: Json
       }
       should_notify: {
         Args: { notif_type: string; user_uuid: string }
