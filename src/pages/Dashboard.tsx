@@ -7,7 +7,7 @@ import { useSpaceStats } from '@/hooks/useSpaceStats';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navbar } from '@/components/Navbar';
-import { Building2, Users, FileText, DollarSign, Wrench, TrendingUp, Home, Clock, AlertCircle, Percent, Download, BarChart3, Sparkles } from 'lucide-react';
+import { Building2, Users, FileText, DollarSign, Wrench, TrendingUp, Home, Clock, AlertCircle, Percent, Download, BarChart3, Sparkles, FileCheck } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
@@ -556,6 +556,10 @@ const Dashboard = () => {
                   <Button onClick={() => navigate('/payment-history')} variant="outline" className="w-full h-auto py-6 flex flex-col gap-2">
                     <DollarSign className="h-6 w-6" />
                     <span>Historique Paiements</span>
+                  </Button>
+                  <Button onClick={() => navigate('/rental-requests')} variant="outline" className="w-full h-auto py-6 flex flex-col gap-2">
+                    <FileCheck className="h-6 w-6" />
+                    <span>Demandes de Location</span>
                   </Button>
                 </>
               )}

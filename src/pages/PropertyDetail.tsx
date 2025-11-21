@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { RequestPropertyDialog } from "@/components/RequestPropertyDialog";
 import {
   ArrowLeft,
   MapPin,
@@ -19,6 +20,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  FileCheck,
 } from "lucide-react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -26,13 +28,14 @@ import "mapbox-gl/dist/mapbox-gl.css";
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [property, setProperty] = useState<any>(null);
   const [gestionnaire, setGestionnaire] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
 
@@ -431,6 +434,24 @@ const PropertyDetail = () => {
                   </div>
                 )}
 
+                {/* Demande de location formelle */}
+                {user && userRole === 'locataire' && property?.statut === 'disponible' && (
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => setRequestDialogOpen(true)}
+                      className="w-full"
+                      variant="default"
+                    >
+                      <FileCheck className="h-4 w-4 mr-2" />
+                      Faire une demande de location
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Envoyez une demande formelle au gestionnaire
+                    </p>
+                    <Separator />
+                  </div>
+                )}
+
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div>
                     <label className="text-sm font-medium mb-2 block">Votre message</label>
@@ -458,6 +479,21 @@ const PropertyDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Request Dialog */}
+      {property && (
+        <RequestPropertyDialog
+          open={requestDialogOpen}
+          onOpenChange={setRequestDialogOpen}
+          propertyId={property.id}
+          propertyTitle={property.titre}
+          managerId={property.gestionnaire_id}
+          spaceId={property.space_id}
+          onSuccess={() => {
+            toast.success("Demande envoyée avec succès");
+          }}
+        />
+      )}
     </div>
   );
 };

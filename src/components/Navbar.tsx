@@ -10,14 +10,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building2, LogOut, User, Home, Settings, DollarSign } from 'lucide-react';
+import { Building2, LogOut, User, Home, Settings, DollarSign, FileCheck } from 'lucide-react';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
 import { SpaceSelector } from '@/components/SpaceSelector';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Navbar = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, userRole } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string>('');
 
@@ -114,6 +114,12 @@ export const Navbar = () => {
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Gérer l'espace</span>
                   </DropdownMenuItem>
+                  {(userRole === 'gestionnaire' || userRole === 'admin') && (
+                    <DropdownMenuItem onClick={() => navigate('/rental-requests')}>
+                      <FileCheck className="mr-2 h-4 w-4" />
+                      <span>Demandes de location</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => navigate('/finance')}>
                     <DollarSign className="mr-2 h-4 w-4" />
                     <span>Finances</span>
