@@ -9,7 +9,10 @@ import { useLeases } from '@/hooks/useLeases';
 import { useAuth } from '@/hooks/useAuth';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { SignatureCanvas } from '@/components/SignatureCanvas';
-import { ArrowLeft, FileText, Download, Trash2, PenTool, CheckCircle, Filter } from 'lucide-react';
+import { DocumentVersionHistory } from '@/components/DocumentVersionHistory';
+import { GenerateContractDialog } from '@/components/GenerateContractDialog';
+import { ArrowLeft, FileText, Download, Trash2, PenTool, CheckCircle, Filter, Clock, Upload } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,10 +26,12 @@ const Documents = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [signingDocument, setSigningDocument] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
+  const [viewingHistory, setViewingHistory] = useState<string | null>(null);
+  const [generatingContract, setGeneratingContract] = useState(false);
   
   const { user, userRole } = useAuth();
   const { leases, loading: leasesLoading } = useLeases();
-  const { documents, loading, uploadDocument, signDocument, deleteDocument } = useDocuments(selectedLeaseId);
+  const { documents, loading, uploadDocument, signDocument, deleteDocument, refetch } = useDocuments(selectedLeaseId);
 
   useEffect(() => {
     if (leaseIdParam) {
@@ -123,6 +128,14 @@ const Documents = () => {
 
         <div className="flex gap-2">
           <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewingHistory(doc.id)}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Historique
+          </Button>
+          <Button
             variant="outline"
             size="sm"
             className="flex-1"
@@ -173,10 +186,16 @@ const Documents = () => {
             <h1 className="text-3xl font-bold">Documents Numériques</h1>
           </div>
           {userRole === 'gestionnaire' && selectedLeaseId && !showUpload && (
-            <Button onClick={() => setShowUpload(true)}>
-              <FileText className="h-4 w-4 mr-2" />
-              Ajouter un document
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setGeneratingContract(true)}>
+                <FileText className="h-4 w-4 mr-2" />
+                Générer contrat PDF
+              </Button>
+              <Button onClick={() => setShowUpload(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Ajouter un document
+              </Button>
+            </div>
           )}
         </div>
 
@@ -317,6 +336,27 @@ const Documents = () => {
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Dialogs */}
+        {viewingHistory && (
+          <Dialog open={!!viewingHistory} onOpenChange={() => setViewingHistory(null)}>
+            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+              <DocumentVersionHistory documentId={viewingHistory} />
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {generatingContract && selectedLeaseId && (
+          <GenerateContractDialog
+            open={generatingContract}
+            onOpenChange={setGeneratingContract}
+            leaseId={selectedLeaseId}
+            spaceId={userLeases.find(l => l.id === selectedLeaseId)?.space_id || ''}
+            onSuccess={() => {
+              refetch();
+            }}
+          />
         )}
       </div>
     </div>
