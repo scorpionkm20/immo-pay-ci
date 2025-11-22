@@ -7,6 +7,7 @@ export interface Lease {
   property_id: string;
   locataire_id: string;
   gestionnaire_id: string;
+  space_id: string;
   date_debut: string;
   date_fin: string | null;
   montant_mensuel: number;
