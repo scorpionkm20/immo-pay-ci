@@ -65,168 +65,180 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
 
     if (validProperties.length === 0) return;
 
-    // Create GeoJSON source
-    const geojsonData: GeoJSON.FeatureCollection = {
-      type: 'FeatureCollection',
-      features: validProperties.map(property => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [Number(property.longitude), Number(property.latitude)]
-        },
-        properties: {
-          id: property.id,
-          titre: property.titre,
-          prix: property.prix_mensuel,
-          pieces: property.nombre_pieces,
-          type: property.type_propriete,
-          statut: property.statut,
-          image: property.images?.[0] || ''
-        }
-      }))
-    };
-
-    // Remove existing source and layers if they exist
-    if (map.current.getSource('properties')) {
-      if (map.current.getLayer('clusters')) map.current.removeLayer('clusters');
-      if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count');
-      if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point');
-      map.current.removeSource('properties');
-    }
-
-    // Add source with clustering
-    map.current.addSource('properties', {
-      type: 'geojson',
-      data: geojsonData,
-      cluster: true,
-      clusterMaxZoom: 14,
-      clusterRadius: 50
-    });
-
-    // Add cluster circles
-    map.current.addLayer({
-      id: 'clusters',
-      type: 'circle',
-      source: 'properties',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': [
-          'step',
-          ['get', 'point_count'],
-          'hsl(var(--primary))',
-          10,
-          'hsl(var(--chart-2))',
-          30,
-          'hsl(var(--destructive))'
-        ],
-        'circle-radius': [
-          'step',
-          ['get', 'point_count'],
-          20,
-          10,
-          30,
-          30,
-          40
-        ],
-        'circle-opacity': 0.8
-      }
-    });
-
-    // Add cluster count
-    map.current.addLayer({
-      id: 'cluster-count',
-      type: 'symbol',
-      source: 'properties',
-      filter: ['has', 'point_count'],
-      layout: {
-        'text-field': '{point_count_abbreviated}',
-        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-        'text-size': 12
-      },
-      paint: {
-        'text-color': '#ffffff'
-      }
-    });
-
-    // Add unclustered points
-    map.current.addLayer({
-      id: 'unclustered-point',
-      type: 'circle',
-      source: 'properties',
-      filter: ['!', ['has', 'point_count']],
-      paint: {
-        'circle-color': [
-          'match',
-          ['get', 'statut'],
-          'disponible', 'hsl(var(--primary))',
-          'loue', 'hsl(var(--muted))',
-          'hsl(var(--muted))'
-        ],
-        'circle-radius': 10,
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#fff',
-        'circle-opacity': 0.9
-      }
-    });
-
-    // Click on cluster to zoom
-    map.current.on('click', 'clusters', (e) => {
+    // Function to add sources and layers
+    const addMapLayers = () => {
       if (!map.current) return;
-      const features = map.current.queryRenderedFeatures(e.point, {
-        layers: ['clusters']
+
+      // Create GeoJSON source
+      const geojsonData: GeoJSON.FeatureCollection = {
+        type: 'FeatureCollection',
+        features: validProperties.map(property => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [Number(property.longitude), Number(property.latitude)]
+          },
+          properties: {
+            id: property.id,
+            titre: property.titre,
+            prix: property.prix_mensuel,
+            pieces: property.nombre_pieces,
+            type: property.type_propriete,
+            statut: property.statut,
+            image: property.images?.[0] || ''
+          }
+        }))
+      };
+
+      // Remove existing source and layers if they exist
+      if (map.current.getSource('properties')) {
+        if (map.current.getLayer('clusters')) map.current.removeLayer('clusters');
+        if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count');
+        if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point');
+        map.current.removeSource('properties');
+      }
+
+      // Add source with clustering
+      map.current.addSource('properties', {
+        type: 'geojson',
+        data: geojsonData,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50
       });
-      const clusterId = features[0].properties?.cluster_id;
-      const source = map.current.getSource('properties') as mapboxgl.GeoJSONSource;
-      
-      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if (err || !map.current) return;
-        const coordinates = (features[0].geometry as GeoJSON.Point).coordinates;
-        map.current.easeTo({
-          center: coordinates as [number, number],
-          zoom: zoom
+
+      // Add cluster circles
+      map.current.addLayer({
+        id: 'clusters',
+        type: 'circle',
+        source: 'properties',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            'hsl(var(--primary))',
+            10,
+            'hsl(var(--chart-2))',
+            30,
+            'hsl(var(--destructive))'
+          ],
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            20,
+            10,
+            30,
+            30,
+            40
+          ],
+          'circle-opacity': 0.8
+        }
+      });
+
+      // Add cluster count
+      map.current.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'properties',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 12
+        },
+        paint: {
+          'text-color': '#ffffff'
+        }
+      });
+
+      // Add unclustered points
+      map.current.addLayer({
+        id: 'unclustered-point',
+        type: 'circle',
+        source: 'properties',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': [
+            'match',
+            ['get', 'statut'],
+            'disponible', 'hsl(var(--primary))',
+            'loue', 'hsl(var(--muted))',
+            'hsl(var(--muted))'
+          ],
+          'circle-radius': 10,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+          'circle-opacity': 0.9
+        }
+      });
+
+      // Click on cluster to zoom
+      map.current.on('click', 'clusters', (e) => {
+        if (!map.current) return;
+        const features = map.current.queryRenderedFeatures(e.point, {
+          layers: ['clusters']
+        });
+        const clusterId = features[0].properties?.cluster_id;
+        const source = map.current.getSource('properties') as mapboxgl.GeoJSONSource;
+        
+        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+          if (err || !map.current) return;
+          const coordinates = (features[0].geometry as GeoJSON.Point).coordinates;
+          map.current.easeTo({
+            center: coordinates as [number, number],
+            zoom: zoom
+          });
         });
       });
-    });
 
-    // Click on unclustered point
-    map.current.on('click', 'unclustered-point', (e) => {
-      if (!e.features || !e.features[0].properties) return;
-      
-      const propertyId = e.features[0].properties.id;
-      const property = validProperties.find(p => p.id === propertyId);
-      
-      if (property) {
-        setSelectedProperty(property);
-        if (onPropertyClick) {
-          onPropertyClick(property);
+      // Click on unclustered point
+      map.current.on('click', 'unclustered-point', (e) => {
+        if (!e.features || !e.features[0].properties) return;
+        
+        const propertyId = e.features[0].properties.id;
+        const property = validProperties.find(p => p.id === propertyId);
+        
+        if (property) {
+          setSelectedProperty(property);
+          if (onPropertyClick) {
+            onPropertyClick(property);
+          }
         }
+      });
+
+      // Change cursor on hover
+      map.current.on('mouseenter', 'clusters', () => {
+        if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+      });
+      map.current.on('mouseleave', 'clusters', () => {
+        if (map.current) map.current.getCanvas().style.cursor = '';
+      });
+      map.current.on('mouseenter', 'unclustered-point', () => {
+        if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+      });
+      map.current.on('mouseleave', 'unclustered-point', () => {
+        if (map.current) map.current.getCanvas().style.cursor = '';
+      });
+
+      // Fit bounds to show all properties
+      if (validProperties.length > 0) {
+        const bounds = new mapboxgl.LngLatBounds();
+        validProperties.forEach(property => {
+          bounds.extend([Number(property.longitude), Number(property.latitude)]);
+        });
+        map.current.fitBounds(bounds, {
+          padding: 50,
+          maxZoom: 15
+        });
       }
-    });
+    };
 
-    // Change cursor on hover
-    map.current.on('mouseenter', 'clusters', () => {
-      if (map.current) map.current.getCanvas().style.cursor = 'pointer';
-    });
-    map.current.on('mouseleave', 'clusters', () => {
-      if (map.current) map.current.getCanvas().style.cursor = '';
-    });
-    map.current.on('mouseenter', 'unclustered-point', () => {
-      if (map.current) map.current.getCanvas().style.cursor = 'pointer';
-    });
-    map.current.on('mouseleave', 'unclustered-point', () => {
-      if (map.current) map.current.getCanvas().style.cursor = '';
-    });
-
-    // Fit bounds to show all properties
-    if (validProperties.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-      validProperties.forEach(property => {
-        bounds.extend([Number(property.longitude), Number(property.latitude)]);
-      });
-      map.current.fitBounds(bounds, {
-        padding: 50,
-        maxZoom: 15
-      });
+    // Wait for style to load before adding layers
+    if (map.current.isStyleLoaded()) {
+      addMapLayers();
+    } else {
+      map.current.once('load', addMapLayers);
     }
 
   }, [properties, token, onPropertyClick]);
