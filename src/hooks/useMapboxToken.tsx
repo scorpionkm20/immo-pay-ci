@@ -10,9 +10,7 @@ export const useMapboxToken = () => {
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke(
-          "sk.eyJ1IjoiZGplZG91NzUiLCJhIjoiY21pYjF0dHp5MHZraTJqc2FxdGVzaTB2NyJ9.10perJfKwn4mmx-zeiv7Dw",
-        );
+        const { data, error } = await supabase.functions.invoke("get-mapbox-token");
 
         if (error) {
           console.error("Error fetching Mapbox token:", error);
