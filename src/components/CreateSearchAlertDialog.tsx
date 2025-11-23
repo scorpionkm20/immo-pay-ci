@@ -156,45 +156,45 @@ export const CreateSearchAlertDialog = ({ children, initialCriteria }: CreateSea
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="ville">Ville</Label>
-              <Select value={ville} onValueChange={setVille}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Toutes les villes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Toutes les villes</SelectItem>
-                  {villes.map(v => (
-                    <SelectItem key={v} value={v}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label htmlFor="ville">Ville</Label>
+            <Select value={ville || "all"} onValueChange={(v) => setVille(v === "all" ? "" : v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Toutes les villes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les villes</SelectItem>
+                {villes.map(v => (
+                  <SelectItem key={v} value={v}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div>
-              <Label htmlFor="quartier">Quartier</Label>
-              <Select value={quartier} onValueChange={setQuartier}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tous les quartiers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Tous les quartiers</SelectItem>
-                  {quartiers.map(q => (
-                    <SelectItem key={q} value={q!}>{q}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label htmlFor="quartier">Quartier</Label>
+            <Select value={quartier || "all"} onValueChange={(v) => setQuartier(v === "all" ? "" : v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Tous les quartiers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les quartiers</SelectItem>
+                {quartiers.map(q => (
+                  <SelectItem key={q} value={q!}>{q}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           </div>
 
           <div>
             <Label htmlFor="type">Type de propriété</Label>
-            <Select value={typePropriety} onValueChange={setTypePropriety}>
+            <Select value={typePropriety || "all"} onValueChange={(v) => setTypePropriety(v === "all" ? "" : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Tous les types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les types</SelectItem>
+                <SelectItem value="all">Tous les types</SelectItem>
                 {typesPropriety.map(t => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
