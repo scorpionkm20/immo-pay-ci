@@ -6,7 +6,8 @@ import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, MapPin, Home, Maximize2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { X, MapPin, Home, Maximize2, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface PropertiesMapProps {
@@ -21,6 +22,7 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const { token, loading } = useMapboxToken();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -59,10 +61,15 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Filter properties with valid coordinates
-    const validProperties = properties.filter(
+    // Filter properties with valid coordinates and by status
+    let validProperties = properties.filter(
       p => p.latitude && p.longitude && !isNaN(Number(p.latitude)) && !isNaN(Number(p.longitude))
     );
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      validProperties = validProperties.filter(p => p.statut === statusFilter);
+    }
 
     if (validProperties.length === 0) return;
 
@@ -293,7 +300,7 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
       map.current.once('load', addMapLayers);
     }
 
-  }, [properties, token, onPropertyClick]);
+  }, [properties, token, onPropertyClick, statusFilter]);
 
   if (loading) {
     return (
@@ -321,10 +328,26 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
       
-      {/* Legend */}
-      <Card className="absolute top-4 left-4 z-10">
-        <CardContent className="p-3">
-          <div className="space-y-2 text-sm">
+      {/* Filters and Legend */}
+      <Card className="absolute top-4 left-4 z-10 bg-background">
+        <CardContent className="p-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Filtres</span>
+          </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full bg-background">
+              <SelectValue placeholder="Statut du bien" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              <SelectItem value="all">Tous les biens</SelectItem>
+              <SelectItem value="disponible">Disponibles uniquement</SelectItem>
+              <SelectItem value="loue">Loués uniquement</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="pt-2 border-t space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-primary" />
               <span>Disponible</span>
@@ -335,7 +358,7 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full" style={{ background: 'hsl(var(--primary))' }} />
-              <span>Cluster (cliquer pour zoomer)</span>
+              <span>Cluster</span>
             </div>
           </div>
         </CardContent>
