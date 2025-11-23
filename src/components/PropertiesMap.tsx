@@ -18,6 +18,7 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const popupRef = useRef<mapboxgl.Popup | null>(null);
   const { token, loading } = useMapboxToken();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const navigate = useNavigate();
@@ -207,17 +208,68 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
         }
       });
 
-      // Change cursor on hover
+      // Hover tooltips for properties
+      map.current.on('mouseenter', 'unclustered-point', (e) => {
+        if (!map.current || !e.features || !e.features[0].properties) return;
+        
+        map.current.getCanvas().style.cursor = 'pointer';
+        
+        const coordinates = (e.features[0].geometry as GeoJSON.Point).coordinates.slice();
+        const props = e.features[0].properties;
+        
+        const property = validProperties.find(p => p.id === props.id);
+        if (!property) return;
+
+        // Create popup HTML
+        const popupHTML = `
+          <div class="p-2 min-w-[200px]">
+            ${property.images?.[0] ? `
+              <img src="${property.images[0]}" alt="${property.titre}" 
+                   class="w-full h-24 object-cover rounded mb-2" />
+            ` : ''}
+            <h3 class="font-semibold text-sm mb-1">${property.titre}</h3>
+            <p class="text-xs text-gray-600 mb-2">${property.ville} • ${property.quartier}</p>
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span>${property.nombre_pieces} pièces</span>
+              ${property.surface_m2 ? `<span>${property.surface_m2} m²</span>` : ''}
+            </div>
+            <p class="text-sm font-bold text-blue-600">${property.prix_mensuel.toLocaleString()} FCFA/mois</p>
+            <p class="text-xs text-gray-500 mt-1">Cliquez pour plus de détails</p>
+          </div>
+        `;
+
+        // Remove existing popup
+        if (popupRef.current) {
+          popupRef.current.remove();
+        }
+
+        // Create and show new popup
+        popupRef.current = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          offset: 15,
+          maxWidth: '250px'
+        })
+          .setLngLat(coordinates as [number, number])
+          .setHTML(popupHTML)
+          .addTo(map.current);
+      });
+
+      map.current.on('mouseleave', 'unclustered-point', () => {
+        if (map.current) {
+          map.current.getCanvas().style.cursor = '';
+        }
+        if (popupRef.current) {
+          popupRef.current.remove();
+          popupRef.current = null;
+        }
+      });
+
+      // Change cursor on hover for clusters
       map.current.on('mouseenter', 'clusters', () => {
         if (map.current) map.current.getCanvas().style.cursor = 'pointer';
       });
       map.current.on('mouseleave', 'clusters', () => {
-        if (map.current) map.current.getCanvas().style.cursor = '';
-      });
-      map.current.on('mouseenter', 'unclustered-point', () => {
-        if (map.current) map.current.getCanvas().style.cursor = 'pointer';
-      });
-      map.current.on('mouseleave', 'unclustered-point', () => {
         if (map.current) map.current.getCanvas().style.cursor = '';
       });
 
