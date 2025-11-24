@@ -184,10 +184,16 @@ const Dashboard = () => {
             </p>
           </div>
           {userRole === 'gestionnaire' && currentSpace && (
-            <Button onClick={handleExportReport} disabled={exportingReport}>
-              <Download className="h-4 w-4 mr-2" />
-              {exportingReport ? 'Export...' : 'Exporter PDF'}
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => navigate('/manager-dashboard')} variant="outline">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Tableau des demandes
+              </Button>
+              <Button onClick={handleExportReport} disabled={exportingReport}>
+                <Download className="h-4 w-4 mr-2" />
+                {exportingReport ? 'Export...' : 'Exporter PDF'}
+              </Button>
+            </div>
           )}
         </div>
 
