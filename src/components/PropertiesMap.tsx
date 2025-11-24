@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, MapPin, Home, Maximize2, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PropertiesMapProps {
   properties: Property[];
@@ -60,6 +61,47 @@ export const PropertiesMap = ({ properties, onPropertyClick }: PropertiesMapProp
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
+
+    // Geocode properties without coordinates
+    const geocodeProperties = async () => {
+      const propertiesNeedingGeocode = properties.filter(
+        p => !p.latitude || !p.longitude || isNaN(Number(p.latitude)) || isNaN(Number(p.longitude))
+      );
+
+      for (const property of propertiesNeedingGeocode) {
+        try {
+          const { data, error } = await supabase.functions.invoke('geocode-address', {
+            body: {
+              address: property.adresse,
+              ville: property.ville,
+              quartier: property.quartier
+            }
+          });
+
+          if (!error && data?.latitude && data?.longitude) {
+            // Update property with coordinates
+            await supabase
+              .from('properties')
+              .update({ 
+                latitude: data.latitude, 
+                longitude: data.longitude 
+              })
+              .eq('id', property.id);
+            
+            // Update local property object
+            property.latitude = data.latitude;
+            property.longitude = data.longitude;
+          }
+        } catch (err) {
+          console.error(`Failed to geocode property ${property.id}:`, err);
+        }
+      }
+    };
+
+    // Run geocoding for properties without coordinates
+    if (properties.some(p => !p.latitude || !p.longitude)) {
+      geocodeProperties();
+    }
 
     // Filter properties with valid coordinates and by status
     let validProperties = properties.filter(
