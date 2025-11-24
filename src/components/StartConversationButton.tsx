@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useConversations } from '@/hooks/useConversations';
@@ -20,7 +20,38 @@ export const StartConversationButton = ({
   const navigate = useNavigate();
   const { createOrGetConversation } = useConversations();
   const [loading, setLoading] = useState(false);
+  const [cautionPaid, setCautionPaid] = useState(false);
+  const [checkingCaution, setCheckingCaution] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    checkCautionStatus();
+  }, [propertyId]);
+
+  const checkCautionStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setCheckingCaution(false);
+        return;
+      }
+
+      // Check if user has an active lease with paid caution for this property
+      const { data: lease } = await supabase
+        .from('leases')
+        .select('caution_payee')
+        .eq('property_id', propertyId)
+        .eq('locataire_id', user.id)
+        .eq('statut', 'actif')
+        .single();
+
+      setCautionPaid(lease?.caution_payee || false);
+    } catch (error) {
+      console.error('Error checking caution status:', error);
+    } finally {
+      setCheckingCaution(false);
+    }
+  };
 
   const handleStartConversation = async () => {
     setLoading(true);
@@ -56,6 +87,34 @@ export const StartConversationButton = ({
       setLoading(false);
     }
   };
+
+  if (checkingCaution) {
+    return (
+      <Button disabled className={className} variant="outline">
+        <MessageSquare className="h-4 w-4 mr-2" />
+        Vérification...
+      </Button>
+    );
+  }
+
+  if (!cautionPaid) {
+    return (
+      <Button
+        onClick={() => {
+          toast({
+            title: "Paiement de caution requis",
+            description: "Vous devez d'abord payer la caution pour contacter le gestionnaire"
+          });
+          navigate('/pending-payments');
+        }}
+        className={className}
+        variant="outline"
+      >
+        <MessageSquare className="h-4 w-4 mr-2" />
+        Payer la caution pour contacter
+      </Button>
+    );
+  }
 
   return (
     <Button

@@ -70,6 +70,27 @@ serve(async (req) => {
       throw updateError;
     }
 
+    // Check if this is a caution payment and update lease
+    const { data: lease } = await supabaseClient
+      .from('leases')
+      .select('id, caution_montant')
+      .eq('id', lease_id)
+      .single();
+
+    if (lease && montant === lease.caution_montant) {
+      // This is the caution payment, mark it as paid in the lease
+      const { error: leaseUpdateError } = await supabaseClient
+        .from('leases')
+        .update({ caution_payee: true })
+        .eq('id', lease_id);
+
+      if (leaseUpdateError) {
+        console.error('Lease update error:', leaseUpdateError);
+      } else {
+        console.log('Caution payment validated for lease:', lease_id);
+      }
+    }
+
     console.log('Payment successful:', { payment_id: payment.id, transaction_id });
 
     return new Response(
