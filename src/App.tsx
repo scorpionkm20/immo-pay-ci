@@ -15,6 +15,7 @@ import MyProperties from "./pages/MyProperties";
 import MyLeases from "./pages/MyLeases";
 import Payments from "./pages/Payments";
 import PaymentHistory from "./pages/PaymentHistory";
+import PendingPayments from "./pages/PendingPayments";
 import Notifications from "./pages/Notifications";
 import Dashboard from "./pages/Dashboard";
 import Messages from "./pages/Messages";
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/my-leases" element={<MyLeases />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
+          <Route path="/pending-payments" element={<PendingPayments />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/notification-settings" element={<NotificationSettings />} />
             <Route path="/dashboard" element={<Dashboard />} />
