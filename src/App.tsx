@@ -33,6 +33,7 @@ import AdminPanel from "./pages/AdminPanel";
 import BedroomDesigner from "./pages/BedroomDesigner";
 import RentalRequests from "./pages/RentalRequests";
 import ManagerDashboard from "./pages/ManagerDashboard";
+import QuickRentalRequests from "./pages/QuickRentalRequests";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
             <Route path="/bedroom-designer" element={<BedroomDesigner />} />
             <Route path="/rental-requests" element={<RentalRequests />} />
             <Route path="/manager-dashboard" element={<ManagerDashboard />} />
+            <Route path="/quick-requests" element={<QuickRentalRequests />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
