@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeRentalRequests } from '@/hooks/useRealtimeRentalRequests';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +57,14 @@ export default function ManagerDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
   const [properties, setProperties] = useState<Array<{ id: string; titre: string }>>([]);
+
+  // Écouter les nouvelles demandes en temps réel
+  useRealtimeRentalRequests({
+    managerId: user?.id,
+    onNewRequest: () => {
+      fetchDashboardData();
+    }
+  });
 
   useEffect(() => {
     fetchDashboardData();
