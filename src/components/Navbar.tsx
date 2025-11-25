@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Building2, LogOut, User, Home, Settings, DollarSign, FileCheck, FileText } from 'lucide-react';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
+import { RentalRequestsBadge } from '@/components/RentalRequestsBadge';
 import { SpaceSelector } from '@/components/SpaceSelector';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -78,6 +79,8 @@ export const Navbar = () => {
                 <Home className="mr-2 h-4 w-4" />
                 Tableau de bord
               </Button>
+              
+              <RentalRequestsBadge />
               
               <NotificationDropdown />
               
