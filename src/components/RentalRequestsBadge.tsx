@@ -54,7 +54,7 @@ export const RentalRequestsBadge = () => {
     <Button
       variant="ghost"
       size="sm"
-      onClick={() => navigate('/manager-dashboard')}
+      onClick={() => navigate('/quick-requests')}
       className={`relative ${isBlinking ? 'animate-pulse-slow' : ''}`}
     >
       <FileCheck className="h-5 w-5" />
