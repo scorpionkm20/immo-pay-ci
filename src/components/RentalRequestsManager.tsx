@@ -11,6 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, XCircle, Clock, User, Calendar, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { RejectionTemplateSelector } from '@/components/RejectionTemplateSelector';
+import { useManagementSpaces } from '@/hooks/useManagementSpaces';
 
 interface Property {
   id: string;
@@ -30,6 +32,7 @@ interface Tenant {
 
 export const RentalRequestsManager = () => {
   const { requests, loading, approveRequest, rejectRequest } = useRentalRequests();
+  const { currentSpace } = useManagementSpaces();
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [properties, setProperties] = useState<Record<string, Property>>({});
   const [tenants, setTenants] = useState<Record<string, Tenant>>({});
@@ -318,15 +321,13 @@ export const RentalRequestsManager = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="reason">Raison du rejet (optionnel)</Label>
-              <Textarea
-                id="reason"
+            {currentSpace && (
+              <RejectionTemplateSelector
+                spaceId={currentSpace.id}
                 value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Expliquez la raison du rejet..."
+                onChange={setRejectionReason}
               />
-            </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
