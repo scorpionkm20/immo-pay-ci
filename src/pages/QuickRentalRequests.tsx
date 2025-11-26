@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle2, XCircle, ArrowLeft, User, Home, Calendar, MessageSquare, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { RejectionTemplateSelector } from '@/components/RejectionTemplateSelector';
+import { useManagementSpaces } from '@/hooks/useManagementSpaces';
 
 interface RequestWithDetails {
   id: string;
@@ -34,6 +36,7 @@ export default function QuickRentalRequests() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { approveRequest, rejectRequest } = useRentalRequests();
+  const { currentSpace } = useManagementSpaces();
   
   const [requests, setRequests] = useState<RequestWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -372,16 +375,13 @@ export default function QuickRentalRequests() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="rejectionReason">Raison du rejet (optionnel)</Label>
-              <Textarea
-                id="rejectionReason"
-                placeholder="Expliquez pourquoi vous rejetez cette demande..."
+            {currentSpace && (
+              <RejectionTemplateSelector
+                spaceId={currentSpace.id}
                 value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                rows={4}
+                onChange={setRejectionReason}
               />
-            </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setActionType(null)} disabled={processing}>

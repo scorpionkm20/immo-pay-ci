@@ -895,6 +895,47 @@ export type Database = {
           },
         ]
       }
+      rejection_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          is_default: boolean | null
+          message: string
+          nom: string
+          space_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_default?: boolean | null
+          message: string
+          nom: string
+          space_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_default?: boolean | null
+          message?: string
+          nom?: string
+          space_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rejection_templates_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rental_requests: {
         Row: {
           created_at: string
