@@ -11,6 +11,7 @@ import featureUsers from '@/assets/feature-users.jpg';
 import featurePayments from '@/assets/feature-payments.jpg';
 import featureManagement from '@/assets/feature-management.jpg';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useParallax } from '@/hooks/useParallax';
 const Landing = () => {
   const navigate = useNavigate();
   const {
@@ -20,6 +21,7 @@ const Landing = () => {
   
   const { elementRef: statsRef, isVisible: statsVisible } = useScrollAnimation();
   const { elementRef: featuresRef, isVisible: featuresVisible } = useScrollAnimation();
+  const scrollY = useParallax();
   const features = [{
     icon: Building2,
     title: 'Gestion Simplifiée',
@@ -54,9 +56,13 @@ const Landing = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-hero">
-        <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{
-          backgroundImage: `url(${heroImage})`,
-        }} />
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-20 transition-transform duration-75 ease-out" 
+          style={{
+            backgroundImage: `url(${heroImage})`,
+            transform: `translateY(${scrollY * 0.5}px)`,
+          }} 
+        />
         <div className="container relative z-10 py-20 md:py-32">
           <div className="mx-auto max-w-4xl text-center">
             <div className="mb-8 flex justify-center">
