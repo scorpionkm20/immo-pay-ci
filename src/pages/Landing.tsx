@@ -5,7 +5,8 @@ import { Navbar } from '@/components/Navbar';
 import { useProperties } from '@/hooks/useProperties';
 import PropertyCard from '@/components/PropertyCard';
 import { Building2, Shield, CreditCard, FileText, Search, Home } from 'lucide-react';
-import heroImage from '@/assets/hero-image.jpg';
+import heroImage from '@/assets/hero-loyerfacile.jpg';
+import loyerFacileLogo from '@/assets/loyerfacile-logo.png';
 import featureUsers from '@/assets/feature-users.jpg';
 import featurePayments from '@/assets/feature-payments.jpg';
 import featureManagement from '@/assets/feature-management.jpg';
@@ -48,27 +49,40 @@ const Landing = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero opacity-90" />
-        <div className="absolute inset-0 bg-cover bg-center" style={{
-        backgroundImage: `url(${heroImage})`,
-        mixBlendMode: 'multiply',
-        opacity: 0.3
-      }} />
-        <div className="container relative z-10 py-24 md:py-32">
-          <div className="mx-auto max-w-3xl text-center text-white">
-            <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-5xl">
+      <section className="relative overflow-hidden bg-gradient-hero">
+        <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{
+          backgroundImage: `url(${heroImage})`,
+        }} />
+        <div className="container relative z-10 py-20 md:py-32">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="mb-8 flex justify-center">
+              <img 
+                src={loyerFacileLogo} 
+                alt="LoyerFacile Logo" 
+                className="h-16 md:h-20 w-auto"
+              />
+            </div>
+            <h1 className="mb-6 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
               Gérez vos loyers en toute sérénité
             </h1>
-            <p className="mb-8 text-lg text-gray-100 md:text-xl">
+            <p className="mb-10 text-lg text-white/90 md:text-xl">
               La plateforme ivoirienne qui simplifie la gestion immobilière et sécurise vos paiements de loyer.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-              <Button size="lg" onClick={() => navigate('/properties')} className="bg-secondary hover:bg-secondary-hover text-secondary-foreground">
+              <Button 
+                size="lg" 
+                onClick={() => navigate('/properties')} 
+                className="bg-white text-primary hover:bg-white/95 font-semibold shadow-lg"
+              >
                 <Search className="mr-2 h-5 w-5" />
                 Trouver un logement
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/auth')} className="bg-white text-primary hover:bg-white/90 border-white">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={() => navigate('/auth')} 
+                className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-primary font-semibold"
+              >
                 <Home className="mr-2 h-5 w-5" />
                 Je suis gestionnaire
               </Button>
@@ -170,17 +184,18 @@ const Landing = () => {
       <footer className="border-t py-12">
         <div className="container">
           <div className="grid gap-8 md:grid-cols-4">
-            <div>
-              <div className="mb-4 flex items-center space-x-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-primary">
-                  <Building2 className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-lg font-bold">LoyerFacile</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                La solution moderne pour la location immobilière en Côte d'Ivoire.
-              </p>
+          <div>
+            <div className="mb-4">
+              <img 
+                src={loyerFacileLogo} 
+                alt="LoyerFacile Logo" 
+                className="h-10 w-auto"
+              />
             </div>
+            <p className="text-sm text-muted-foreground">
+              La solution moderne pour la location immobilière en Côte d'Ivoire.
+            </p>
+          </div>
             
             <div>
               <h3 className="mb-4 font-semibold">Liens Rapides</h3>
