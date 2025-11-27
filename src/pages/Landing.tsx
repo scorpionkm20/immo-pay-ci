@@ -59,7 +59,7 @@ const Landing = () => {
               <img 
                 src={loyerFacileLogo} 
                 alt="LoyerFacile Logo" 
-                className="h-16 md:h-20 w-auto"
+                className="h-16 md:h-20 w-auto animate-fade-in"
               />
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
