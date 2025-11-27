@@ -8,62 +8,62 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Côte d'Ivoire Colors - LoyerFacile Design System */
+    /* LoyerFacile Design System - Blue & Cyan Brand Colors */
     --background: 0 0% 100%;
-    --foreground: 142 35% 20%;
+    --foreground: 220 15% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 142 35% 20%;
+    --card-foreground: 220 15% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 142 35% 20%;
+    --popover-foreground: 220 15% 20%;
 
-    /* Primary - Vert CI (#2B8A3E) */
-    --primary: 142 54% 36%;
+    /* Primary - Blue (#3B82F6) */
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 142 54% 30%;
-    --primary-light: 142 54% 95%;
+    --primary-hover: 217 91% 50%;
+    --primary-light: 214 100% 97%;
 
-    /* Secondary - Orange CI (#FF8C42) */
-    --secondary: 22 100% 63%;
+    /* Secondary - Cyan (#06B6D4) */
+    --secondary: 189 94% 43%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-hover: 22 100% 55%;
-    --secondary-light: 22 100% 95%;
+    --secondary-hover: 189 94% 38%;
+    --secondary-light: 189 94% 96%;
 
-    --muted: 142 10% 96%;
-    --muted-foreground: 142 10% 45%;
+    --muted: 220 15% 96%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 22 100% 96%;
-    --accent-foreground: 142 54% 36%;
+    --accent: 189 94% 96%;
+    --accent-foreground: 217 91% 60%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 142 15% 88%;
-    --input: 142 15% 88%;
-    --ring: 142 54% 36%;
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 217 91% 60%;
 
     --radius: 0.75rem;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(142 54% 36%), hsl(142 54% 45%));
-    --gradient-secondary: linear-gradient(135deg, hsl(22 100% 63%), hsl(22 100% 70%));
-    --gradient-hero: linear-gradient(135deg, hsl(142 54% 36%), hsl(142 54% 45%), hsl(22 100% 63%));
+    /* Gradients - LoyerFacile Brand */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(189 94% 43%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(217 91% 60%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(217 91% 60% / 0.95) 0%, hsl(189 94% 43% / 0.9) 100%);
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(142 54% 36% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(142 54% 36% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(142 54% 36% / 0.15);
-    --shadow-xl: 0 20px 25px -5px hsl(142 54% 36% / 0.2);
+    --shadow-sm: 0 1px 2px 0 hsl(217 91% 60% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(217 91% 60% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(217 91% 60% / 0.15);
+    --shadow-xl: 0 20px 25px -5px hsl(217 91% 60% / 0.2);
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 142 35% 20%;
-    --sidebar-primary: 142 54% 36%;
+    --sidebar-foreground: 220 15% 20%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 142 10% 96%;
-    --sidebar-accent-foreground: 142 54% 36%;
-    --sidebar-border: 142 15% 88%;
-    --sidebar-ring: 142 54% 36%;
+    --sidebar-accent: 220 15% 96%;
+    --sidebar-accent-foreground: 217 91% 60%;
+    --sidebar-border: 220 13% 88%;
+    --sidebar-ring: 217 91% 60%;
   }
 
   /* Animations for rental requests badge */
@@ -86,46 +86,46 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 142 35% 8%;
+    --background: 220 25% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 142 35% 12%;
+    --card: 220 25% 12%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 142 35% 12%;
+    --popover: 220 25% 12%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 142 54% 45%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 142 54% 50%;
-    --primary-light: 142 54% 20%;
+    --primary-hover: 217 91% 65%;
+    --primary-light: 217 91% 20%;
 
-    --secondary: 22 100% 63%;
+    --secondary: 189 94% 43%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-hover: 22 100% 70%;
-    --secondary-light: 22 100% 20%;
+    --secondary-hover: 189 94% 50%;
+    --secondary-light: 189 94% 20%;
 
-    --muted: 142 20% 18%;
-    --muted-foreground: 142 10% 65%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 10% 65%;
 
-    --accent: 142 20% 18%;
-    --accent-foreground: 142 54% 45%;
+    --accent: 220 20% 18%;
+    --accent-foreground: 217 91% 60%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 142 20% 18%;
-    --input: 142 20% 18%;
-    --ring: 142 54% 45%;
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
+    --ring: 217 91% 60%;
 
-    --sidebar-background: 142 35% 10%;
+    --sidebar-background: 220 25% 10%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 142 54% 45%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 142 20% 18%;
-    --sidebar-accent-foreground: 142 54% 45%;
-    --sidebar-border: 142 20% 18%;
-    --sidebar-ring: 142 54% 45%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 217 91% 60%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
