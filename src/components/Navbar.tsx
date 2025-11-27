@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import loyerFacileLogo from '@/assets/loyerfacile-logo.png';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,13 +55,12 @@ export const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary">
-            <Building2 className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            LoyerFacile
-          </span>
+        <Link to="/" className="flex items-center space-x-2 animate-[slide-in-top_0.6s_ease-out]">
+          <img 
+            src={loyerFacileLogo} 
+            alt="LoyerFacile Logo" 
+            className="h-10 w-auto"
+          />
         </Link>
 
         <div className="flex items-center gap-4">
