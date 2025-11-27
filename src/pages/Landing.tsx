@@ -10,12 +10,16 @@ import loyerFacileLogo from '@/assets/loyerfacile-logo.png';
 import featureUsers from '@/assets/feature-users.jpg';
 import featurePayments from '@/assets/feature-payments.jpg';
 import featureManagement from '@/assets/feature-management.jpg';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 const Landing = () => {
   const navigate = useNavigate();
   const {
     properties
   } = useProperties();
   const featuredProperties = properties?.slice(0, 3) || [];
+  
+  const { elementRef: statsRef, isVisible: statsVisible } = useScrollAnimation();
+  const { elementRef: featuresRef, isVisible: featuresVisible } = useScrollAnimation();
   const features = [{
     icon: Building2,
     title: 'Gestion Simplifiée',
@@ -62,17 +66,17 @@ const Landing = () => {
                 className="h-16 md:h-20 w-auto animate-fade-in"
               />
             </div>
-            <h1 className="mb-6 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
+            <h1 className="mb-6 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
               Gérez vos loyers en toute sérénité
             </h1>
-            <p className="mb-10 text-lg text-white/90 md:text-xl">
+            <p className="mb-10 text-lg text-white/90 md:text-xl animate-fade-in" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
               La plateforme ivoirienne qui simplifie la gestion immobilière et sécurise vos paiements de loyer.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button 
                 size="lg" 
                 onClick={() => navigate('/properties')} 
-                className="bg-white text-primary hover:bg-white/95 font-semibold shadow-lg"
+                className="bg-white text-primary hover:bg-white/95 font-semibold shadow-lg animate-[fade-in_0.5s_ease-out_0.6s_both,scale-in_0.3s_ease-out_0.6s_both]"
               >
                 <Search className="mr-2 h-5 w-5" />
                 Trouver un logement
@@ -81,7 +85,7 @@ const Landing = () => {
                 size="lg" 
                 variant="outline" 
                 onClick={() => navigate('/auth')} 
-                className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-primary font-semibold"
+                className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-primary font-semibold animate-[fade-in_0.5s_ease-out_0.8s_both,scale-in_0.3s_ease-out_0.8s_both]"
               >
                 <Home className="mr-2 h-5 w-5" />
                 Je suis gestionnaire
@@ -92,10 +96,18 @@ const Landing = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="border-y bg-primary-light py-12">
+      <section ref={statsRef} className="border-y bg-primary-light py-12">
         <div className="container">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {stats.map((stat, index) => <div key={index} className="text-center">
+            {stats.map((stat, index) => <div 
+                key={index} 
+                className={`text-center transition-all duration-700 ${
+                  statsVisible 
+                    ? 'opacity-100 translate-y-0' 
+                    : 'opacity-0 translate-y-10'
+                }`}
+                style={{ transitionDelay: `${index * 0.1}s` }}
+              >
                 <div className="mb-2 text-4xl font-bold text-primary">{stat.value}</div>
                 <div className="text-sm text-muted-foreground">{stat.label}</div>
               </div>)}
@@ -104,9 +116,13 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20">
+      <section ref={featuresRef} className="py-20">
         <div className="container">
-          <div className="mb-12 text-center">
+          <div className={`mb-12 text-center transition-all duration-700 ${
+            featuresVisible 
+              ? 'opacity-100 translate-y-0' 
+              : 'opacity-0 translate-y-10'
+          }`}>
             <h2 className="mb-4 text-3xl font-bold text-foreground md:text-4xl">
               Pourquoi Choisir LoyerFacile ?
             </h2>
@@ -116,7 +132,15 @@ const Landing = () => {
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
-            {features.map((feature, index) => <Card key={index} className="overflow-hidden transition-shadow hover:shadow-lg">
+            {features.map((feature, index) => <Card 
+                key={index} 
+                className={`overflow-hidden transition-all duration-700 hover:shadow-lg ${
+                  featuresVisible 
+                    ? 'opacity-100 translate-y-0' 
+                    : 'opacity-0 translate-y-10'
+                }`}
+                style={{ transitionDelay: `${0.2 + index * 0.15}s` }}
+              >
                 <div className="aspect-video overflow-hidden">
                   <img src={feature.image} alt={feature.title} className="h-full w-full object-cover transition-transform hover:scale-105" />
                 </div>
