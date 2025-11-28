@@ -91,10 +91,19 @@ export const usePayments = (leaseId?: string) => {
       return { data: null, error };
     }
 
-    toast({
-      title: "Paiement initié",
-      description: "Veuillez suivre les instructions sur votre téléphone"
-    });
+    // Check if simulation mode
+    if (data?.simulation_mode) {
+      toast({
+        title: "Mode Simulation",
+        description: "Le paiement sera validé automatiquement (pas de vraie transaction)",
+        variant: "default"
+      });
+    } else {
+      toast({
+        title: "Paiement initié",
+        description: "Veuillez suivre les instructions sur votre téléphone"
+      });
+    }
 
     return { data, error: null };
   };

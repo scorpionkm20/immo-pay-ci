@@ -10,7 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, CreditCard, Home } from 'lucide-react';
+import { ArrowLeft, CreditCard, Home, AlertCircle, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 
 interface PendingPaymentWithDetails {
   id: string;
@@ -21,6 +23,11 @@ interface PendingPaymentWithDetails {
   property_titre: string;
   property_adresse: string;
   is_caution: boolean;
+  lease_details: {
+    date_debut: string;
+    montant_mensuel: number;
+    caution_montant: number;
+  };
 }
 
 export default function PendingPayments() {
@@ -39,6 +46,7 @@ export default function PendingPayments() {
     methode_paiement: 'mobile_money',
     numero_telephone: ''
   });
+  const [isSimulationMode, setIsSimulationMode] = useState(false);
 
   useEffect(() => {
     fetchPendingPayments();
@@ -49,10 +57,10 @@ export default function PendingPayments() {
 
     setLoading(true);
     try {
-      // Get user's leases
+      // Get user's leases with all details
       const { data: leases, error: leasesError } = await supabase
         .from('leases')
-        .select('id, property_id, caution_montant, locataire_id')
+        .select('id, property_id, caution_montant, locataire_id, date_debut, montant_mensuel')
         .eq('locataire_id', user.id)
         .eq('statut', 'actif');
 
@@ -96,7 +104,12 @@ export default function PendingPayments() {
           lease_id: payment.lease_id,
           property_titre: property?.titre || 'Propriété inconnue',
           property_adresse: property?.adresse || '',
-          is_caution: isCaution
+          is_caution: isCaution,
+          lease_details: {
+            date_debut: lease?.date_debut || '',
+            montant_mensuel: lease?.montant_mensuel || 0,
+            caution_montant: lease?.caution_montant || 0
+          }
         };
       }) || [];
 
@@ -129,7 +142,7 @@ export default function PendingPayments() {
       return;
     }
 
-    const { error } = await createPayment({
+    const { data, error } = await createPayment({
       lease_id: payment.lease_id,
       montant: payment.montant,
       mois_paiement: payment.mois_paiement,
@@ -138,6 +151,11 @@ export default function PendingPayments() {
     });
 
     if (!error) {
+      // Update simulation mode status
+      if (data?.simulation_mode) {
+        setIsSimulationMode(true);
+      }
+      
       fetchPendingPayments();
       setPaymentForm({
         payment_id: '',
@@ -158,11 +176,34 @@ export default function PendingPayments() {
         Retour
       </Button>
 
-      <div>
-        <h1 className="text-3xl font-bold">Paiements en attente</h1>
-        <p className="text-muted-foreground mt-2">
-          Complétez vos paiements pour valider vos baux
-        </p>
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-3xl font-bold">Paiements en attente</h1>
+          <p className="text-muted-foreground mt-2">
+            Complétez vos paiements pour valider vos baux
+          </p>
+        </div>
+
+        <Alert className={isSimulationMode ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" : "border-green-500 bg-green-50 dark:bg-green-950/20"}>
+          {isSimulationMode ? (
+            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          ) : (
+            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          )}
+          <AlertTitle className={isSimulationMode ? "text-amber-900 dark:text-amber-100" : "text-green-900 dark:text-green-100"}>
+            {isSimulationMode ? "Mode Simulation Actif" : "Mode Production"}
+          </AlertTitle>
+          <AlertDescription className={isSimulationMode ? "text-amber-800 dark:text-amber-200" : "text-green-800 dark:text-green-200"}>
+            {isSimulationMode ? (
+              <>
+                Les clés API de paiement ne sont pas configurées. Les paiements seront validés automatiquement sans transaction réelle. 
+                <strong className="block mt-1">⚠️ Aucun argent ne sera débité en mode simulation.</strong>
+              </>
+            ) : (
+              "Les paiements sont connectés à l'agrégateur. Les transactions seront réelles et l'argent sera débité de votre compte."
+            )}
+          </AlertDescription>
+        </Alert>
       </div>
 
       {pendingPayments.length === 0 ? (
@@ -201,16 +242,45 @@ export default function PendingPayments() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
+                <div className="p-4 bg-muted rounded-lg space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Montant à payer</span>
                     <span className="text-2xl font-bold">{payment.montant.toLocaleString()} FCFA</span>
                   </div>
                   {payment.is_caution && (
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-xs text-muted-foreground">
                       ⚠️ Le paiement de la caution est requis pour valider votre bail et accéder au chat avec le gestionnaire
                     </p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold">Détails du bail</h4>
+                  <Separator />
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Date de début</span>
+                      <p className="font-medium">
+                        {new Date(payment.lease_details.date_debut).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Loyer mensuel</span>
+                      <p className="font-medium">{payment.lease_details.montant_mensuel.toLocaleString()} FCFA</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Caution totale</span>
+                      <p className="font-medium">{payment.lease_details.caution_montant.toLocaleString()} FCFA</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Type</span>
+                      <p className="font-medium">{payment.is_caution ? 'Caution' : 'Loyer'}</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid gap-4">
