@@ -592,10 +592,16 @@ const Dashboard = () => {
               )}
               
               {userRole === 'locataire' && (
-                <Button onClick={() => navigate('/payments')} className="w-full h-auto py-6 flex flex-col gap-2">
-                  <DollarSign className="h-6 w-6" />
-                  <span>Payer mon Loyer</span>
-                </Button>
+                <>
+                  <Button onClick={() => navigate('/payments')} className="w-full h-auto py-6 flex flex-col gap-2">
+                    <DollarSign className="h-6 w-6" />
+                    <span>Payer mon Loyer</span>
+                  </Button>
+                  <Button onClick={() => navigate('/payment-history')} variant="outline" className="w-full h-auto py-6 flex flex-col gap-2">
+                    <BarChart3 className="h-6 w-6" />
+                    <span>Historique Paiements</span>
+                  </Button>
+                </>
               )}
             </div>
           </CardContent>
