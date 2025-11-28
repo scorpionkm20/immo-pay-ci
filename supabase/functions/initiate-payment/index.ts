@@ -45,23 +45,83 @@ serve(async (req) => {
       throw paymentError;
     }
 
-    // Here you would integrate with the actual Mobile Money APIs
-    // For now, we'll simulate a successful payment
-    // In production, you would call the respective API based on methode_paiement:
-    // - Orange Money API
-    // - MTN Money API
-    // - Moov Money API
-    // - Wave API
+    // Check if payment aggregator keys are configured
+    const hasPaymentKeys = Deno.env.get('PAYMENT_API_KEY') && 
+                           Deno.env.get('PAYMENT_SITE_ID');
 
-    // Simulate payment processing
-    const transaction_id = `TXN-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    let transaction_id: string;
+    let payment_url: string | null = null;
 
-    // Update payment with transaction ID and status
+    if (!hasPaymentKeys) {
+      // MODE SIMULATION - Les clés API ne sont pas encore configurées
+      console.log('⚠️ Mode simulation activé - Clés API de paiement non configurées');
+      transaction_id = `SIM-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      
+      // En mode simulation, on marque directement le paiement comme réussi après 2 secondes
+      setTimeout(async () => {
+        await supabaseClient
+          .from('payments')
+          .update({
+            transaction_id,
+            statut: 'reussi',
+            date_paiement: new Date().toISOString()
+          })
+          .eq('id', payment.id);
+
+        // Check if this is a caution payment and update lease
+        const { data: lease } = await supabaseClient
+          .from('leases')
+          .select('id, caution_montant')
+          .eq('id', lease_id)
+          .single();
+
+        if (lease && montant === lease.caution_montant) {
+          await supabaseClient
+            .from('leases')
+            .update({ caution_payee: true })
+            .eq('id', lease_id);
+          console.log('Caution payment validated (simulation):', lease_id);
+        }
+      }, 2000);
+
+    } else {
+      // MODE PRODUCTION - Intégration avec l'agrégateur de paiement
+      const paymentPayload = {
+        apikey: Deno.env.get('PAYMENT_API_KEY'),
+        site_id: Deno.env.get('PAYMENT_SITE_ID'),
+        transaction_id: `PAY-${payment.id}-${Date.now()}`,
+        amount: montant,
+        currency: 'XOF',
+        channels: 'ALL', // Orange, MTN, Moov, Wave automatique
+        description: `Paiement loyer - ${mois_paiement}`,
+        return_url: `${Deno.env.get('APP_DOMAIN')}/payment/success`,
+        notify_url: `${Deno.env.get('APP_DOMAIN')}/api/payments/webhook`,
+        customer_phone_number: numero_telephone,
+      };
+
+      // Appel API vers l'agrégateur (CinetPay, Hub2, etc.)
+      const response = await fetch(Deno.env.get('PAYMENT_BASE_URL') || '', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentPayload),
+      });
+
+      const result = await response.json();
+      
+      if (result.code !== '201') {
+        throw new Error(`Erreur agrégateur: ${result.message}`);
+      }
+
+      transaction_id = result.data.payment_token;
+      payment_url = result.data.payment_url;
+    }
+
+    // Update payment with transaction ID
     const { error: updateError } = await supabaseClient
       .from('payments')
       .update({
         transaction_id,
-        statut: 'reussi' // In production, this would be updated via webhook
+        statut: hasPaymentKeys ? 'en_cours' : 'reussi'
       })
       .eq('id', payment.id);
 
@@ -70,35 +130,18 @@ serve(async (req) => {
       throw updateError;
     }
 
-    // Check if this is a caution payment and update lease
-    const { data: lease } = await supabaseClient
-      .from('leases')
-      .select('id, caution_montant')
-      .eq('id', lease_id)
-      .single();
-
-    if (lease && montant === lease.caution_montant) {
-      // This is the caution payment, mark it as paid in the lease
-      const { error: leaseUpdateError } = await supabaseClient
-        .from('leases')
-        .update({ caution_payee: true })
-        .eq('id', lease_id);
-
-      if (leaseUpdateError) {
-        console.error('Lease update error:', leaseUpdateError);
-      } else {
-        console.log('Caution payment validated for lease:', lease_id);
-      }
-    }
-
-    console.log('Payment successful:', { payment_id: payment.id, transaction_id });
+    console.log('Payment initiated:', { payment_id: payment.id, transaction_id, mode: hasPaymentKeys ? 'production' : 'simulation' });
 
     return new Response(
       JSON.stringify({
         success: true,
         payment_id: payment.id,
         transaction_id,
-        message: 'Paiement initié avec succès'
+        payment_url,
+        simulation_mode: !hasPaymentKeys,
+        message: hasPaymentKeys 
+          ? 'Paiement initié avec succès' 
+          : 'Mode simulation - Paiement sera validé automatiquement'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
