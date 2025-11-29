@@ -570,10 +570,10 @@ export type Database = {
           date_paiement: string | null
           id: string
           lease_id: string
-          methode_paiement: string
+          methode_paiement: string | null
           mois_paiement: string
           montant: number
-          numero_telephone: string
+          numero_telephone: string | null
           recu_url: string | null
           space_id: string
           statut: string
@@ -585,10 +585,10 @@ export type Database = {
           date_paiement?: string | null
           id?: string
           lease_id: string
-          methode_paiement: string
+          methode_paiement?: string | null
           mois_paiement: string
           montant: number
-          numero_telephone: string
+          numero_telephone?: string | null
           recu_url?: string | null
           space_id: string
           statut?: string
@@ -600,10 +600,10 @@ export type Database = {
           date_paiement?: string | null
           id?: string
           lease_id?: string
-          methode_paiement?: string
+          methode_paiement?: string | null
           mois_paiement?: string
           montant?: number
-          numero_telephone?: string
+          numero_telephone?: string | null
           recu_url?: string | null
           space_id?: string
           statut?: string
