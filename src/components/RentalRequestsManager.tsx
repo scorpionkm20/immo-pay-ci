@@ -67,22 +67,13 @@ export const RentalRequestsManager = () => {
           .from('profiles')
           .select('user_id, full_name, phone')
           .in('user_id', tenantIds);
-
-        // Fetch user emails from auth metadata
-        const usersData = await Promise.all(
-          tenantIds.map(async (id) => {
-            const { data: { user } } = await supabase.auth.admin.getUserById(id);
-            return user;
-          })
-        );
         
-        if (profilesData && usersData) {
+        if (profilesData) {
           const tenantsMap = profilesData.reduce((acc, profile) => {
-            const user = usersData.find(u => u && u.id === profile.user_id);
             acc[profile.user_id] = {
               user_id: profile.user_id,
               full_name: profile.full_name,
-              email: user?.email || '',
+              email: '', // Email not available from client-side
               phone: profile.phone
             };
             return acc;
@@ -192,7 +183,7 @@ export const RentalRequestsManager = () => {
                             </p>
                             <p className="flex items-center gap-2">
                               <User className="h-4 w-4" />
-                              {tenant?.full_name} - {tenant?.email}
+                              {tenant?.full_name}
                               {tenant?.phone && ` - ${tenant.phone}`}
                             </p>
                             <p className="flex items-center gap-2">
