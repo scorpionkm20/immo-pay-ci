@@ -50,13 +50,45 @@ export const usePayments = (leaseId?: string) => {
   useEffect(() => {
     fetchPayments();
 
-    // Set up realtime subscription
+    // Set up realtime subscription with toast notifications
     const channel = supabase
       .channel('payments-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'payments'
+        },
+        (payload) => {
+          const newPayment = payload.new as Payment;
+          
+          // Show notification based on status change
+          if (newPayment.statut === 'complete') {
+            toast({
+              title: "✅ Paiement réussi",
+              description: `Paiement de ${newPayment.montant.toLocaleString()} FCFA confirmé`,
+            });
+          } else if (newPayment.statut === 'echoue') {
+            toast({
+              variant: "destructive",
+              title: "❌ Paiement échoué",
+              description: "Le paiement n'a pas pu être traité",
+            });
+          } else if (newPayment.statut === 'en_cours') {
+            toast({
+              title: "⏳ Paiement en cours",
+              description: "Votre paiement est en cours de traitement",
+            });
+          }
+          
+          fetchPayments();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
           schema: 'public',
           table: 'payments'
         },
@@ -69,7 +101,7 @@ export const usePayments = (leaseId?: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [leaseId]);
+  }, [leaseId, toast]);
 
   const createPayment = async (paymentData: {
     lease_id: string;
