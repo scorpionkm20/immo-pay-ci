@@ -35,6 +35,7 @@ import RentalRequests from "./pages/RentalRequests";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import QuickRentalRequests from "./pages/QuickRentalRequests";
 import ManageRejectionTemplates from "./pages/ManageRejectionTemplates";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/manager-dashboard" element={<ManagerDashboard />} />
             <Route path="/quick-requests" element={<QuickRentalRequests />} />
             <Route path="/manage-rejection-templates" element={<ManageRejectionTemplates />} />
+            <Route path="/analytics" element={<Analytics />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

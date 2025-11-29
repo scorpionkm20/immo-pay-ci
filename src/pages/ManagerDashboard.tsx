@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, CheckCircle2, XCircle, TrendingUp, Home, Users, DollarSign, Filter, Search, ArrowLeft } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, TrendingUp, Home, Users, DollarSign, Filter, Search, ArrowLeft, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -229,6 +229,10 @@ export default function ManagerDashboard() {
           <h1 className="text-3xl font-bold mt-4">Tableau de bord gestionnaire</h1>
           <p className="text-muted-foreground mt-2">Vue d'ensemble de vos demandes de location</p>
         </div>
+        <Button onClick={() => navigate('/analytics')}>
+          <BarChart3 className="h-4 w-4 mr-2" />
+          Analytics
+        </Button>
       </div>
 
       {/* Statistics Cards */}
