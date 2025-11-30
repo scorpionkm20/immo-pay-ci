@@ -23,7 +23,8 @@ interface LeaseWithProperty extends Lease {
 const MyLeases = () => {
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
-  const { leases, loading } = useLeases();
+  // AUTORISATION + FILTRAGE : useLeases filtre déjà par rôle et user_id
+  const { leases, loading } = useLeases(userRole);
   const [myLeases, setMyLeases] = useState<LeaseWithProperty[]>([]);
 
   useEffect(() => {
@@ -36,13 +37,8 @@ const MyLeases = () => {
   }, [leases, user, userRole]);
 
   const fetchLeasesWithDetails = async () => {
-    let filteredLeases: Lease[] = [];
-
-    if (userRole === 'locataire') {
-      filteredLeases = leases.filter(l => l.locataire_id === user!.id);
-    } else if (userRole === 'gestionnaire') {
-      filteredLeases = leases.filter(l => l.gestionnaire_id === user!.id);
-    }
+    // Les baux sont déjà filtrés par useLeases selon le rôle et l'utilisateur connecté
+    const filteredLeases = leases;
 
     // Fetch property and locataire details
     const leasesWithDetails = await Promise.all(

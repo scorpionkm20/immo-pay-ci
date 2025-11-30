@@ -24,14 +24,18 @@ export const usePayments = (leaseId?: string) => {
 
   const fetchPayments = async () => {
     setLoading(true);
+    
+    // FILTRAGE (Unicité du Contenu) : Toujours filtrer via RLS + lease_id
     let query = supabase
       .from('payments')
       .select('*')
       .order('mois_paiement', { ascending: false });
 
     if (leaseId) {
+      // Filtrer par bail spécifique (l'utilisateur a déjà accès via RLS)
       query = query.eq('lease_id', leaseId);
     }
+    // Si pas de leaseId, RLS filtre automatiquement par space_id
 
     const { data, error } = await query;
 

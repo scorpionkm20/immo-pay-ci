@@ -32,7 +32,7 @@ interface PendingPaymentWithDetails {
 
 export default function PendingPayments() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const { createPayment } = usePayments();
   const { toast } = useToast();
   const [pendingPayments, setPendingPayments] = useState<PendingPaymentWithDetails[]>([]);
@@ -57,11 +57,11 @@ export default function PendingPayments() {
 
     setLoading(true);
     try {
-      // Get user's leases with all details
+      // FILTRAGE (Unicité du Contenu) : Récupérer uniquement les baux actifs de l'utilisateur connecté
       const { data: leases, error: leasesError } = await supabase
         .from('leases')
         .select('id, property_id, caution_montant, locataire_id, date_debut, montant_mensuel')
-        .eq('locataire_id', user.id)
+        .eq('locataire_id', user.id)  // CRITIQUE : Filtrage explicite par auth.uid()
         .eq('statut', 'actif');
 
       if (leasesError) throw leasesError;
