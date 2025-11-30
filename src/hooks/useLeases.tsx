@@ -19,17 +19,36 @@ export interface Lease {
   updated_at: string;
 }
 
-export const useLeases = () => {
+export const useLeases = (userRole?: string | null) => {
   const [leases, setLeases] = useState<Lease[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   const fetchLeases = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    
+    // FILTRAGE (Unicité du Contenu) : Récupérer uniquement les baux de l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    let query = supabase
       .from('leases')
       .select('*')
       .order('created_at', { ascending: false });
+
+    // Filtrer par rôle - CRITIQUE pour la sécurité
+    if (userRole === 'locataire') {
+      query = query.eq('locataire_id', user.id);
+    } else if (userRole === 'gestionnaire') {
+      query = query.eq('gestionnaire_id', user.id);
+    }
+    // Les admins voient tous les baux (pas de filtre supplémentaire)
+
+    const { data, error } = await query;
 
     if (error) {
       toast({
@@ -65,7 +84,7 @@ export const useLeases = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [userRole]);
 
   const createLease = async (leaseData: {
     property_id: string;

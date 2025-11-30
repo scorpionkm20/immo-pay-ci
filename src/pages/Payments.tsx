@@ -14,8 +14,9 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function Payments() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { leases, loading: leasesLoading } = useLeases();
+  const { user, userRole } = useAuth();
+  // FILTRAGE : useLeases filtre automatiquement par rôle et user_id
+  const { leases, loading: leasesLoading } = useLeases(userRole);
   const [selectedLeaseId, setSelectedLeaseId] = useState<string>('');
   const { payments, loading: paymentsLoading, createPayment, downloadReceipt } = usePayments(selectedLeaseId);
   const { toast } = useToast();
@@ -26,7 +27,8 @@ export default function Payments() {
     mois_paiement: new Date().toISOString().split('T')[0].substring(0, 7)
   });
 
-  const myLeases = leases.filter(lease => lease.locataire_id === user?.id && lease.statut === 'actif');
+  // FILTRAGE supplémentaire côté client uniquement pour les baux actifs
+  const myLeases = leases.filter(lease => lease.statut === 'actif');
 
   useEffect(() => {
     if (myLeases.length > 0 && !selectedLeaseId) {
