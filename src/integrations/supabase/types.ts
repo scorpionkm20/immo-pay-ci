@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       contract_templates: {
         Row: {
           content: string
@@ -1345,7 +1381,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      audit_stats: {
+        Row: {
+          action: string | null
+          count: number | null
+          last_occurrence: string | null
+          resource_type: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_rental_request: {
@@ -1391,6 +1435,15 @@ export type Database = {
         Args: {
           code: string
           user_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string
+      }
+      log_audit: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_resource_id?: string
+          p_resource_type: string
         }
         Returns: string
       }

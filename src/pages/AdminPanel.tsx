@@ -9,10 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield, UserCog, Search, History, Filter } from 'lucide-react';
+import { Loader2, Shield, UserCog, Search, History, Filter, Activity, AlertCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useAuditLogs, useAuditStats } from '@/hooks/useAuditLogs';
+import { Badge } from '@/components/ui/badge';
 
 interface UserWithRole {
   id: string;
@@ -230,7 +232,7 @@ const AdminPanel = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="users" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="users">
                   <UserCog className="h-4 w-4 mr-2" />
                   Utilisateurs
@@ -238,6 +240,10 @@ const AdminPanel = () => {
                 <TabsTrigger value="history" onClick={() => !history.length && fetchRoleHistory()}>
                   <History className="h-4 w-4 mr-2" />
                   Historique
+                </TabsTrigger>
+                <TabsTrigger value="audit">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Audit
                 </TabsTrigger>
               </TabsList>
 
@@ -373,10 +379,118 @@ const AdminPanel = () => {
                   </div>
                 )}
               </TabsContent>
+
+              <TabsContent value="audit">
+                <AuditLogsTab />
+              </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
+    </div>
+  );
+};
+
+// New component for Audit Logs tab
+const AuditLogsTab = () => {
+  const { data: logs, isLoading } = useAuditLogs(100);
+  const { data: stats } = useAuditStats();
+
+  const getActionBadgeVariant = (action: string) => {
+    if (action.includes('approved') || action.includes('created')) return 'default';
+    if (action.includes('rejected') || action.includes('removed')) return 'destructive';
+    if (action.includes('updated') || action.includes('changed')) return 'secondary';
+    return 'outline';
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Statistics Cards */}
+      {stats && stats.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {stats.slice(0, 6).map((stat) => (
+            <Card key={`${stat.action}-${stat.resource_type}`}>
+              <CardHeader className="pb-3">
+                <CardDescription className="flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
+                  {stat.resource_type}
+                </CardDescription>
+                <CardTitle className="text-2xl">{stat.count}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Badge variant={getActionBadgeVariant(stat.action)}>
+                  {stat.action}
+                </Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Audit Logs Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" />
+            Journal d'audit
+          </CardTitle>
+          <CardDescription>
+            Les 100 dernières actions critiques effectuées sur la plateforme
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : !logs || logs.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Aucun log d'audit disponible
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Utilisateur</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Ressource</TableHead>
+                    <TableHead>Détails</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {logs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-sm whitespace-nowrap">
+                        {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: fr })}
+                      </TableCell>
+                      <TableCell className="font-medium">{log.user_name}</TableCell>
+                      <TableCell>
+                        <Badge variant={getActionBadgeVariant(log.action)}>
+                          {log.action}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs text-muted-foreground">
+                          {log.resource_type}
+                        </span>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {log.details && (
+                          <span className="text-xs font-mono">
+                            {JSON.stringify(log.details).substring(0, 50)}...
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
