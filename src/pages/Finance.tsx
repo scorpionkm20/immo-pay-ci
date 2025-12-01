@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useManagementSpaces } from '@/hooks/useManagementSpaces';
 import { useFinancialData } from '@/hooks/useFinancialData';
 import { useFinancialForecasts } from '@/hooks/useFinancialForecasts';
@@ -22,7 +23,8 @@ import {
   AlertTriangle,
   Info,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  ArrowLeft
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -49,6 +51,7 @@ import { fr } from 'date-fns/locale';
 const COLORS = ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981'];
 
 export default function Finance() {
+  const navigate = useNavigate();
   const { currentSpace } = useManagementSpaces();
   const { charges, amortizations, metrics, loading } = useFinancialData(currentSpace?.id);
   const [forecastMonths, setForecastMonths] = useState(6);
@@ -148,6 +151,13 @@ export default function Finance() {
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           {/* Header */}
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" onClick={() => navigate('/home')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour
+            </Button>
+          </div>
+          
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Gestion Financière</h1>
