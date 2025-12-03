@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useManagementSpaces } from "@/hooks/useManagementSpaces";
 import { useSpaceInvitations } from "@/hooks/useSpaceInvitations";
-import { Building2, Plus, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check, ArrowLeft } from "lucide-react";
+import { Building2, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Table,
   TableBody,
@@ -130,31 +131,17 @@ export default function ManageSpace() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/home')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
-          </Button>
-        </div>
-        
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Building2 className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">{currentSpace.nom}</h1>
-              {currentSpace.description && (
-                <p className="text-muted-foreground">{currentSpace.description}</p>
-              )}
-            </div>
-          </div>
-          <Button onClick={() => setInviteDialogOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Inviter un membre
-          </Button>
-        </div>
+        <PageHeader
+          title={currentSpace.nom}
+          description={currentSpace.description}
+          backTo="/home"
+          actions={
+            <Button onClick={() => setInviteDialogOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Inviter un membre
+            </Button>
+          }
+        />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useNotifications } from '@/hooks/useNotifications';
-import { ArrowLeft, Bell, Check, CheckCheck } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { Bell, Check, CheckCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -41,12 +42,7 @@ const Notifications = () => {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-3xl font-bold">Notifications</h1>
-          </div>
+          <PageHeader title="Notifications" backTo="/dashboard" />
           <div className="text-center text-muted-foreground">Chargement...</div>
         </div>
       </div>
@@ -56,20 +52,18 @@ const Notifications = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-3xl font-bold">Notifications</h1>
-          </div>
-          {notifications.some(n => !n.lu) && (
-            <Button variant="outline" onClick={markAllAsRead}>
-              <CheckCheck className="h-4 w-4 mr-2" />
-              Tout marquer comme lu
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          title="Notifications"
+          backTo="/dashboard"
+          actions={
+            notifications.some(n => !n.lu) && (
+              <Button variant="outline" onClick={markAllAsRead}>
+                <CheckCheck className="h-4 w-4 mr-2" />
+                Tout marquer comme lu
+              </Button>
+            )
+          }
+        />
 
         {notifications.length === 0 ? (
           <Card>

@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageHeader } from '@/components/PageHeader';
 import { 
   Heart, 
   MapPin, 
@@ -94,14 +95,11 @@ const Favorites = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto p-6 max-w-7xl">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Mes favoris</h1>
-            <p className="text-muted-foreground">
-              {favorites.length} propriété(s) favorite(s)
-            </p>
-          </div>
-          <div className="flex gap-2">
+        <PageHeader
+          title="Mes favoris"
+          description={`${favorites.length} propriété(s) favorite(s)`}
+          backTo="/properties"
+          actions={
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'grid' | 'list')}>
               <TabsList>
                 <TabsTrigger value="grid" className="gap-2">
@@ -114,8 +112,8 @@ const Favorites = () => {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-          </div>
-        </div>
+          }
+        />
 
         {selectedForComparison.size > 0 && (
           <Card className="mb-6 border-primary">

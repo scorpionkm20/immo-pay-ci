@@ -11,7 +11,8 @@ import { DocumentUpload } from '@/components/DocumentUpload';
 import { SignatureCanvas } from '@/components/SignatureCanvas';
 import { DocumentVersionHistory } from '@/components/DocumentVersionHistory';
 import { GenerateContractDialog } from '@/components/GenerateContractDialog';
-import { ArrowLeft, FileText, Download, Trash2, PenTool, CheckCircle, Filter, Clock, Upload } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { FileText, Download, Trash2, PenTool, CheckCircle, Filter, Clock, Upload } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -178,26 +179,24 @@ const Documents = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-3xl font-bold">Documents Numériques</h1>
-          </div>
-          {userRole === 'gestionnaire' && selectedLeaseId && !showUpload && (
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => setGeneratingContract(true)}>
-                <FileText className="h-4 w-4 mr-2" />
-                Générer contrat PDF
-              </Button>
-              <Button onClick={() => setShowUpload(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Ajouter un document
-              </Button>
-            </div>
-          )}
-        </div>
+        <PageHeader
+          title="Documents Numériques"
+          backTo="/dashboard"
+          actions={
+            userRole === 'gestionnaire' && selectedLeaseId && !showUpload && (
+              <>
+                <Button variant="secondary" onClick={() => setGeneratingContract(true)}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Générer contrat PDF
+                </Button>
+                <Button onClick={() => setShowUpload(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Ajouter un document
+                </Button>
+              </>
+            )
+          }
+        />
 
         {/* Lease Selector */}
         <Card className="mb-6">

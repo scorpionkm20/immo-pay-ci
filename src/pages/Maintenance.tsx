@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { CreateTicketDialog } from "@/components/CreateTicketDialog";
 import { TicketCard } from "@/components/TicketCard";
 import { useMaintenanceTickets, TicketStatus } from "@/hooks/useMaintenanceTickets";
 import { useLeases } from "@/hooks/useLeases";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 const Maintenance = () => {
-  const navigate = useNavigate();
   const { user, userRole } = useAuth();
   const { leases } = useLeases();
   const [searchParams] = useSearchParams();
@@ -51,19 +50,11 @@ const Maintenance = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={() => navigate('/home')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour
-        </Button>
-      </div>
-      
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Maintenance</h1>
-        {isLocataire && selectedLeaseId && (
-          <CreateTicketDialog leaseId={selectedLeaseId} />
-        )}
-      </div>
+      <PageHeader
+        title="Maintenance"
+        backTo="/home"
+        actions={isLocataire && selectedLeaseId && <CreateTicketDialog leaseId={selectedLeaseId} />}
+      />
 
       <Card>
         <CardHeader>

@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Download, Filter, Calendar, CreditCard, Smartphone, AlertCircle, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { Download, Filter, Calendar, CreditCard, Smartphone, AlertCircle, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -250,17 +251,11 @@ export default function PaymentHistory() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <Button variant="ghost" onClick={() => navigate('/dashboard')}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Retour
-      </Button>
-
-      <div>
-        <h1 className="text-3xl font-bold">Historique des paiements</h1>
-        <p className="text-muted-foreground mt-2">
-          Consultez l'historique complet de vos transactions
-        </p>
-      </div>
+      <PageHeader
+        title="Historique des paiements"
+        description="Consultez l'historique complet de vos transactions"
+        backTo="/dashboard"
+      />
 
       {/* Filters Section */}
       <Card>

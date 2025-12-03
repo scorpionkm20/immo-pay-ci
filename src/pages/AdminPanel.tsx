@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuditLogs, useAuditStats } from '@/hooks/useAuditLogs';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/PageHeader';
 
 interface UserWithRole {
   id: string;
@@ -220,16 +221,12 @@ const AdminPanel = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto py-8 px-4">
+        <PageHeader
+          title="Panneau d'administration"
+          description="Gérer les rôles et voir l'historique"
+          backTo="/dashboard"
+        />
         <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              <div>
-                <CardTitle>Panneau d'administration</CardTitle>
-                <CardDescription>Gérer les rôles et voir l'historique</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
           <CardContent>
             <Tabs defaultValue="users" className="w-full">
               <TabsList className="grid w-full grid-cols-3">

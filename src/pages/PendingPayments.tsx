@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, CreditCard, Home, AlertCircle, CheckCircle } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { CreditCard, Home, AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 
@@ -171,20 +172,13 @@ export default function PendingPayments() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <Button variant="ghost" onClick={() => navigate('/dashboard')}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Retour
-      </Button>
+      <PageHeader
+        title="Paiements en attente"
+        description="Complétez vos paiements pour valider vos baux"
+        backTo="/dashboard"
+      />
 
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-3xl font-bold">Paiements en attente</h1>
-          <p className="text-muted-foreground mt-2">
-            Complétez vos paiements pour valider vos baux
-          </p>
-        </div>
-
-        <Alert className={isSimulationMode ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" : "border-green-500 bg-green-50 dark:bg-green-950/20"}>
+      <Alert className={isSimulationMode ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" : "border-green-500 bg-green-50 dark:bg-green-950/20"}>
           {isSimulationMode ? (
             <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           ) : (
@@ -204,7 +198,6 @@ export default function PendingPayments() {
             )}
           </AlertDescription>
         </Alert>
-      </div>
 
       {pendingPayments.length === 0 ? (
         <Card>
