@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CreditCard, Download } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { CreditCard, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Payments() {
@@ -74,10 +75,7 @@ export default function Payments() {
   if (myLeases.length === 0) {
     return (
       <div className="container mx-auto p-6">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Retour
-        </Button>
+        <PageHeader title="Paiements" backTo="/dashboard" />
         <Card>
           <CardHeader>
             <CardTitle>Aucun bail actif</CardTitle>
@@ -90,10 +88,7 @@ export default function Payments() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
-      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Retour
-      </Button>
+      <PageHeader title="Paiements" backTo="/dashboard" />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

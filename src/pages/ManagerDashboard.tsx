@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, CheckCircle2, XCircle, TrendingUp, Home, Users, DollarSign, Filter, Search, ArrowLeft, BarChart3 } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { Clock, CheckCircle2, XCircle, TrendingUp, Home, Users, DollarSign, Filter, Search, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -220,20 +221,17 @@ export default function ManagerDashboard() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <Button variant="ghost" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
+      <PageHeader
+        title="Tableau de bord gestionnaire"
+        description="Vue d'ensemble de vos demandes de location"
+        backTo="/dashboard"
+        actions={
+          <Button onClick={() => navigate('/analytics')}>
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
           </Button>
-          <h1 className="text-3xl font-bold mt-4">Tableau de bord gestionnaire</h1>
-          <p className="text-muted-foreground mt-2">Vue d'ensemble de vos demandes de location</p>
-        </div>
-        <Button onClick={() => navigate('/analytics')}>
-          <BarChart3 className="h-4 w-4 mr-2" />
-          Analytics
-        </Button>
-      </div>
+        }
+      />
 
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

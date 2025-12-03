@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { AvatarUpload } from '@/components/AvatarUpload';
+import { PageHeader } from '@/components/PageHeader';
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(2, { message: "Le nom doit contenir au moins 2 caractères" }).max(100),
@@ -137,19 +138,22 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl">Mon Profil</CardTitle>
-            <Badge variant={getRoleBadgeVariant(userRole)}>
-              {getRoleLabel(userRole)}
-            </Badge>
-          </div>
-          <CardDescription>
-            Gérez vos informations personnelles
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-md mx-auto">
+        <PageHeader
+          title="Mon Profil"
+          description="Gérez vos informations personnelles"
+          backTo="/dashboard"
+        />
+        <Card className="w-full">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl">Informations</CardTitle>
+              <Badge variant={getRoleBadgeVariant(userRole)}>
+                {getRoleLabel(userRole)}
+              </Badge>
+            </div>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <AvatarUpload
@@ -203,12 +207,9 @@ const Profile = () => {
               )}
             </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button type="submit" className="flex-1" disabled={loading}>
+            <div className="pt-4">
+              <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Mise à jour...' : 'Mettre à jour'}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => navigate('/')}>
-                Retour
               </Button>
             </div>
           </form>
@@ -259,6 +260,7 @@ const Profile = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

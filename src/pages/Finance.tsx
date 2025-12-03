@@ -6,6 +6,7 @@ import { useFinancialForecasts } from '@/hooks/useFinancialForecasts';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
 import { FinancialForecastChart } from '@/components/FinancialForecastChart';
+import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -23,8 +24,7 @@ import {
   AlertTriangle,
   Info,
   ArrowUpRight,
-  ArrowDownRight,
-  ArrowLeft
+  ArrowDownRight
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -150,35 +150,26 @@ export default function Finance() {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" onClick={() => navigate('/home')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
-            </Button>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Gestion Financière</h1>
-              <p className="text-muted-foreground">
-                Analyse complète de la rentabilité de {currentSpace.nom}
-              </p>
-            </div>
-            <Button onClick={handleGenerateReport} disabled={generatingReport}>
-              {generatingReport ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Génération...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Générer Rapport PDF
-                </>
-              )}
-            </Button>
-          </div>
+          <PageHeader
+            title="Gestion Financière"
+            description={`Analyse complète de la rentabilité de ${currentSpace.nom}`}
+            backTo="/home"
+            actions={
+              <Button onClick={handleGenerateReport} disabled={generatingReport}>
+                {generatingReport ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Génération...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Générer Rapport PDF
+                  </>
+                )}
+              </Button>
+            }
+          />
 
           {/* Métriques principales */}
           {loading ? (

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bell, MessageSquare, CreditCard, Wrench, FileText } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { PageHeader } from "@/components/PageHeader";
 
 const NotificationSettings = () => {
   const { preferences, loading, updatePreferences } = useNotificationPreferences();
@@ -84,17 +85,13 @@ const NotificationSettings = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto p-6 max-w-3xl">
+        <PageHeader
+          title="Préférences de notification"
+          description="Choisissez les types de notifications que vous souhaitez recevoir"
+          backTo="/dashboard"
+        />
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-6 w-6" />
-              Préférences de notification
-            </CardTitle>
-            <CardDescription>
-              Choisissez les types de notifications que vous souhaitez recevoir
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pt-6">
             {notificationTypes.map(({ key, icon: Icon, label, description }) => (
               <div key={key} className="flex items-start justify-between space-x-4 pb-4 border-b last:border-0">
                 <div className="flex items-start space-x-3 flex-1">

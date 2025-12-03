@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Home, DollarSign, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useManagementSpaces } from '@/hooks/useManagementSpaces';
+import { PageHeader } from '@/components/PageHeader';
 
 const COLORS = {
   primary: 'hsl(var(--primary))',
@@ -52,12 +53,11 @@ export default function Analytics() {
 
   return (
     <div className="container py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Analytics & Reporting</h1>
-        <p className="text-muted-foreground">
-          Tableau de bord analytique pour {currentSpace.nom}
-        </p>
-      </div>
+      <PageHeader
+        title="Analytics & Reporting"
+        description={`Tableau de bord analytique pour ${currentSpace.nom}`}
+        backTo="/dashboard"
+      />
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

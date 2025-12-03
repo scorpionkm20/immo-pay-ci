@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/PageHeader';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,15 +77,12 @@ const SearchAlerts = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto p-6 max-w-6xl">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Mes alertes de recherche</h1>
-            <p className="text-muted-foreground">
-              Gérez vos alertes et soyez notifié des nouvelles propriétés
-            </p>
-          </div>
-          <CreateSearchAlertDialog />
-        </div>
+        <PageHeader
+          title="Mes alertes de recherche"
+          description="Gérez vos alertes et soyez notifié des nouvelles propriétés"
+          backTo="/properties"
+          actions={<CreateSearchAlertDialog />}
+        />
 
         {alerts.length === 0 ? (
           <Card>
