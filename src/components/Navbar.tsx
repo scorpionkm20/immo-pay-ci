@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useManagementSpaces } from '@/hooks/useManagementSpaces';
 import { Button } from '@/components/ui/button';
 import loyerFacileLogo from '@/assets/loyerfacile-logo.png';
 import {
@@ -20,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const Navbar = () => {
   const { user, signOut, userRole } = useAuth();
+  const { currentSpace } = useManagementSpaces();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string>('');
 
@@ -110,6 +112,20 @@ export const Navbar = () => {
                       </p>
                     </div>
                   </DropdownMenuLabel>
+                  
+                  {/* Mobile Space Indicator */}
+                  <div className="md:hidden px-2 py-2">
+                    <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
+                      <Building2 className="h-4 w-4 text-primary shrink-0" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] text-primary/70 uppercase tracking-wider">Espace actif</span>
+                        <span className="text-sm font-medium text-primary truncate">
+                          {currentSpace?.nom || 'Aucun espace'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                     <Home className="mr-2 h-4 w-4" />
