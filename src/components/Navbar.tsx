@@ -66,8 +66,14 @@ export const Navbar = () => {
         <div className="flex items-center gap-4">
           {user ? (
             <>
-              <div className="hidden md:block w-64">
-                <SpaceSelector />
+              <div className="hidden md:flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full border border-primary/20">
+                  <Building2 className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-medium text-primary">Espace actif</span>
+                </div>
+                <div className="w-56">
+                  <SpaceSelector />
+                </div>
               </div>
               
               <Button

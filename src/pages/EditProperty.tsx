@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useManagementSpaces } from '@/hooks/useManagementSpaces';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PropertyImageManager } from '@/components/PropertyImageManager';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -32,10 +33,12 @@ const EditProperty = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
+  const { spaces, loading: spacesLoading } = useManagementSpaces();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [images, setImages] = useState<string[]>([]);
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>('');
 
   const [formData, setFormData] = useState({
     titre: '',
@@ -87,6 +90,7 @@ const EditProperty = () => {
           longitude: data.longitude?.toString() || '',
         });
         setImages(data.images || []);
+        setSelectedSpaceId(data.space_id || '');
       }
     } catch (error: any) {
       console.error('Error fetching property:', error);
@@ -135,6 +139,7 @@ const EditProperty = () => {
         .update({
           ...result.data,
           images,
+          space_id: selectedSpaceId,
           date_mise_a_jour: new Date().toISOString(),
         })
         .eq('id', id);
@@ -173,6 +178,36 @@ const EditProperty = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Space Selector */}
+              <div className="space-y-2">
+                <Label htmlFor="space" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Espace de gestion
+                </Label>
+                {spacesLoading ? (
+                  <div className="h-10 bg-muted animate-pulse rounded-md" />
+                ) : (
+                  <Select
+                    value={selectedSpaceId}
+                    onValueChange={setSelectedSpaceId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un espace" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {spaces.map((space) => (
+                        <SelectItem key={space.id} value={space.id}>
+                          {space.nom}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Déplacez cette propriété vers un autre espace si nécessaire
+                </p>
+              </div>
+
               {/* Images Manager */}
               <div className="space-y-2">
                 <Label>Images de la propriété (max 10)</Label>
