@@ -10,9 +10,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PropertyImageManager } from '@/components/PropertyImageManager';
-import { ArrowLeft, Building2 } from 'lucide-react';
+import { ArrowLeft, Building2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const propertySchema = z.object({
   titre: z.string().trim().min(5, "Le titre doit contenir au moins 5 caractères").max(100),
@@ -39,6 +49,9 @@ const EditProperty = () => {
   const [errors, setErrors] = useState<any>({});
   const [images, setImages] = useState<string[]>([]);
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('');
+  const [originalSpaceId, setOriginalSpaceId] = useState<string>('');
+  const [pendingSpaceId, setPendingSpaceId] = useState<string>('');
+  const [showSpaceChangeConfirm, setShowSpaceChangeConfirm] = useState(false);
 
   const [formData, setFormData] = useState({
     titre: '',
@@ -91,6 +104,7 @@ const EditProperty = () => {
         });
         setImages(data.images || []);
         setSelectedSpaceId(data.space_id || '');
+        setOriginalSpaceId(data.space_id || '');
       }
     } catch (error: any) {
       console.error('Error fetching property:', error);
@@ -156,6 +170,30 @@ const EditProperty = () => {
     }
   };
 
+  const handleSpaceChange = (newSpaceId: string) => {
+    if (newSpaceId !== originalSpaceId && originalSpaceId) {
+      setPendingSpaceId(newSpaceId);
+      setShowSpaceChangeConfirm(true);
+    } else {
+      setSelectedSpaceId(newSpaceId);
+    }
+  };
+
+  const confirmSpaceChange = () => {
+    setSelectedSpaceId(pendingSpaceId);
+    setShowSpaceChangeConfirm(false);
+    setPendingSpaceId('');
+  };
+
+  const cancelSpaceChange = () => {
+    setShowSpaceChangeConfirm(false);
+    setPendingSpaceId('');
+  };
+
+  const getSpaceName = (spaceId: string) => {
+    return spaces.find(s => s.id === spaceId)?.nom || 'Inconnu';
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -189,7 +227,7 @@ const EditProperty = () => {
                 ) : (
                   <Select
                     value={selectedSpaceId}
-                    onValueChange={setSelectedSpaceId}
+                    onValueChange={handleSpaceChange}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un espace" />
@@ -202,6 +240,14 @@ const EditProperty = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                )}
+                {selectedSpaceId !== originalSpaceId && originalSpaceId && (
+                  <div className="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      Cette propriété sera déplacée vers un nouvel espace
+                    </p>
+                  </div>
                 )}
                 <p className="text-xs text-muted-foreground">
                   Déplacez cette propriété vers un autre espace si nécessaire
@@ -385,6 +431,31 @@ const EditProperty = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Space Change Confirmation Dialog */}
+      <AlertDialog open={showSpaceChangeConfirm} onOpenChange={setShowSpaceChangeConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Confirmer le déplacement
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous êtes sur le point de déplacer cette propriété de l'espace{' '}
+              <strong>"{getSpaceName(originalSpaceId)}"</strong> vers{' '}
+              <strong>"{getSpaceName(pendingSpaceId)}"</strong>.
+              <br /><br />
+              Cette action modifiera l'accès à cette propriété pour les membres des différents espaces.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelSpaceChange}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSpaceChange}>
+              Confirmer le déplacement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
