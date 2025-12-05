@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useProperties } from '@/hooks/useProperties';
+import { useManagementSpaces } from '@/hooks/useManagementSpaces';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PropertyImageManager } from '@/components/PropertyImageManager';
 import { z } from 'zod';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const propertySchema = z.object({
@@ -30,9 +31,11 @@ const CreateProperty = () => {
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
   const { createProperty } = useProperties();
+  const { spaces, currentSpace, loading: spacesLoading } = useManagementSpaces();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [images, setImages] = useState<string[]>([]);
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>('');
 
   const [formData, setFormData] = useState({
     titre: '',
@@ -53,6 +56,15 @@ const CreateProperty = () => {
       navigate('/');
     }
   }, [user, userRole, navigate]);
+
+  // Set default space when spaces are loaded
+  useEffect(() => {
+    if (currentSpace && !selectedSpaceId) {
+      setSelectedSpaceId(currentSpace.id);
+    } else if (spaces.length > 0 && !selectedSpaceId) {
+      setSelectedSpaceId(spaces[0].id);
+    }
+  }, [spaces, currentSpace, selectedSpaceId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,12 +94,18 @@ const CreateProperty = () => {
       return;
     }
 
+    if (!selectedSpaceId) {
+      toast.error('Veuillez sélectionner un espace de gestion');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { data: property, error: createError } = await createProperty({
         ...result.data,
         gestionnaire_id: user!.id,
+        space_id: selectedSpaceId,
         images,
         equipements: formData.equipements
       });
@@ -120,7 +138,48 @@ const CreateProperty = () => {
             <CardDescription>Publiez une nouvelle propriété</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Space Selector */}
+              <div className="space-y-2">
+                <Label htmlFor="space" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Espace de gestion *
+                </Label>
+                {spacesLoading ? (
+                  <div className="h-10 bg-muted animate-pulse rounded-md" />
+                ) : spaces.length === 0 ? (
+                  <div className="p-4 border border-dashed rounded-md text-center">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Aucun espace de gestion trouvé
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/manage-space')}
+                    >
+                      Créer un espace
+                    </Button>
+                  </div>
+                ) : (
+                  <Select
+                    value={selectedSpaceId}
+                    onValueChange={setSelectedSpaceId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un espace" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {spaces.map((space) => (
+                        <SelectItem key={space.id} value={space.id}>
+                          {space.nom}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
               {/* Images */}
               <div className="space-y-2">
                 <Label>Images de la propriété (max 10)</Label>
