@@ -74,16 +74,37 @@ export const useProperties = () => {
   }, []);
 
   const createProperty = async (propertyData: any) => {
-    // Ensure space_id is included
+    // Ensure space_id is included - try multiple sources
     if (!propertyData.space_id) {
-      const spaceId = localStorage.getItem('currentSpaceId');
+      // Try localStorage first
+      let spaceId = localStorage.getItem('currentSpaceId');
+      
+      // If not in localStorage, fetch user's spaces
+      if (!spaceId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: spaceMemberships } = await supabase
+            .from('space_members')
+            .select('space_id')
+            .eq('user_id', user.id)
+            .eq('role', 'gestionnaire')
+            .limit(1)
+            .single();
+          
+          if (spaceMemberships?.space_id) {
+            spaceId = spaceMemberships.space_id;
+            localStorage.setItem('currentSpaceId', spaceId);
+          }
+        }
+      }
+      
       if (!spaceId) {
         toast({
           variant: "destructive",
           title: "Erreur",
-          description: "Aucun espace de gestion sélectionné"
+          description: "Aucun espace de gestion trouvé. Veuillez créer ou rejoindre un espace."
         });
-        return { data: null, error: new Error("No space selected") };
+        return { data: null, error: new Error("No space found") };
       }
       propertyData.space_id = spaceId;
     }
@@ -95,6 +116,7 @@ export const useProperties = () => {
       .single();
 
     if (error) {
+      console.error('Property creation error:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
