@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 export type TicketStatus = "ouvert" | "en_cours" | "resolu" | "ferme";
 export type TicketPriority = "faible" | "moyenne" | "haute" | "urgente";
@@ -16,6 +17,7 @@ export interface MaintenanceTicket {
   photos: string[];
   created_at: string;
   updated_at: string;
+  space_id: string;
 }
 
 export interface MaintenanceIntervention {
@@ -27,6 +29,16 @@ export interface MaintenanceIntervention {
   statut_apres: TicketStatus | null;
   created_at: string;
 }
+
+const getStatusLabel = (status: TicketStatus): string => {
+  switch (status) {
+    case "ouvert": return "Ouvert";
+    case "en_cours": return "En cours";
+    case "resolu": return "Résolu";
+    case "ferme": return "Fermé";
+    default: return status;
+  }
+};
 
 export const useMaintenanceTickets = (leaseId?: string) => {
   const queryClient = useQueryClient();
@@ -49,6 +61,54 @@ export const useMaintenanceTickets = (leaseId?: string) => {
       return data as MaintenanceTicket[];
     },
   });
+
+  // Real-time subscription for ticket updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('maintenance-tickets-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'maintenance_tickets'
+        },
+        (payload) => {
+          const oldTicket = payload.old as MaintenanceTicket;
+          const newTicket = payload.new as MaintenanceTicket;
+          
+          // Show toast notification for status changes
+          if (oldTicket.statut !== newTicket.statut) {
+            toast.info(`Ticket "${newTicket.titre}"`, {
+              description: `Statut mis à jour: ${getStatusLabel(oldTicket.statut)} → ${getStatusLabel(newTicket.statut)}`,
+            });
+          }
+          
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ["maintenance-tickets"] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'maintenance_tickets'
+        },
+        (payload) => {
+          const newTicket = payload.new as MaintenanceTicket;
+          toast.success(`Nouveau ticket créé`, {
+            description: newTicket.titre,
+          });
+          queryClient.invalidateQueries({ queryKey: ["maintenance-tickets"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const createTicket = useMutation({
     mutationFn: async ({
