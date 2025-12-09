@@ -77,12 +77,60 @@ All colors MUST be HSL.
     50% { transform: scale(1.02); }
   }
 
+  /* Space transition animations */
+  @keyframes space-switch {
+    0% { 
+      opacity: 0.7; 
+      transform: scale(0.98);
+    }
+    50% { 
+      opacity: 0.85; 
+      transform: scale(1.01);
+    }
+    100% { 
+      opacity: 1; 
+      transform: scale(1);
+    }
+  }
+
+  @keyframes space-indicator-pulse {
+    0%, 100% { 
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+    }
+    50% { 
+      box-shadow: 0 0 0 6px hsl(var(--primary) / 0);
+    }
+  }
+
+  @keyframes slide-up-fade {
+    0% {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .animate-blink {
     animation: blink 1s ease-in-out infinite;
   }
 
   .animate-pulse-slow {
     animation: pulse-slow 2s ease-in-out infinite;
+  }
+
+  .animate-space-switch {
+    animation: space-switch 0.4s ease-out;
+  }
+
+  .animate-space-indicator {
+    animation: space-indicator-pulse 2s ease-in-out infinite;
+  }
+
+  .animate-slide-up-fade {
+    animation: slide-up-fade 0.25s ease-out;
   }
 
   .dark {
