@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -9,25 +9,39 @@ import { TicketCard } from "@/components/TicketCard";
 import { useMaintenanceTickets, TicketStatus } from "@/hooks/useMaintenanceTickets";
 import { useLeases } from "@/hooks/useLeases";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { Navbar } from "@/components/Navbar";
 
 const Maintenance = () => {
-  const { user, userRole } = useAuth();
-  const { leases } = useLeases();
+  const navigate = useNavigate();
+  const { user, userRole, loading: authLoading } = useAuth();
+  const { leases, loading: leasesLoading } = useLeases(userRole);
   const [searchParams] = useSearchParams();
-  const [selectedLeaseId, setSelectedLeaseId] = useState<string>("");
-  const { tickets, isLoading } = useMaintenanceTickets(selectedLeaseId || undefined);
+  const [selectedLeaseId, setSelectedLeaseId] = useState<string>("all");
+  const { tickets, isLoading: ticketsLoading } = useMaintenanceTickets(
+    selectedLeaseId === "all" ? undefined : selectedLeaseId
+  );
 
   const isLocataire = userRole === "locataire";
+  const isGestionnaire = userRole === "gestionnaire";
 
-  // Pre-select lease from URL params
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
+
+  // Pre-select lease from URL params or first lease for locataire
   useEffect(() => {
     const leaseParam = searchParams.get("lease");
     if (leaseParam) {
       setSelectedLeaseId(leaseParam);
+    } else if (isLocataire && leases && leases.length > 0 && selectedLeaseId === "all") {
+      setSelectedLeaseId(leases[0].id);
     }
-  }, [searchParams]);
+  }, [searchParams, leases, isLocataire, selectedLeaseId]);
 
   const filterTicketsByStatus = (status: TicketStatus | "all") => {
     if (!tickets) return [];
@@ -48,37 +62,64 @@ const Maintenance = () => {
 
   const counts = getTicketCounts();
 
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      <PageHeader
-        title="Maintenance"
-        backTo="/home"
-        actions={isLocataire && selectedLeaseId && <CreateTicketDialog leaseId={selectedLeaseId} />}
-      />
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtrer par bail</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="lease">Sélectionner un bail</Label>
-            <Select value={selectedLeaseId} onValueChange={setSelectedLeaseId}>
-              <SelectTrigger id="lease">
-                <SelectValue placeholder="Tous les baux" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Tous les baux</SelectItem>
-                {leases?.map((lease) => (
-                  <SelectItem key={lease.id} value={lease.id}>
-                    Bail du {new Date(lease.date_debut).toLocaleDateString()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+  if (!user) {
+    return null;
+  }
+
+  const showCreateButton = isLocataire && selectedLeaseId && selectedLeaseId !== "all";
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="container mx-auto p-6 space-y-6">
+        <PageHeader
+          title="Maintenance"
+          backTo="/home"
+          actions={showCreateButton && <CreateTicketDialog leaseId={selectedLeaseId} />}
+        />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Filtrer par bail</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="lease">Sélectionner un bail</Label>
+              {leasesLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Chargement des baux...
+                </div>
+              ) : leases && leases.length > 0 ? (
+                <Select value={selectedLeaseId} onValueChange={setSelectedLeaseId}>
+                  <SelectTrigger id="lease">
+                    <SelectValue placeholder="Sélectionner un bail" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isGestionnaire && <SelectItem value="all">Tous les baux</SelectItem>}
+                    {leases.map((lease) => (
+                      <SelectItem key={lease.id} value={lease.id}>
+                        Bail du {new Date(lease.date_debut).toLocaleDateString("fr-FR")} - {lease.montant_mensuel.toLocaleString("fr-FR")} FCFA/mois
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Aucun bail trouvé. {isLocataire ? "Vous n'avez pas encore de bail actif." : "Créez un bail pour voir les tickets de maintenance."}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
@@ -100,8 +141,11 @@ const Maintenance = () => {
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          {isLoading ? (
-            <p className="text-center text-muted-foreground">Chargement...</p>
+          {ticketsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+              <span className="text-muted-foreground">Chargement des tickets...</span>
+            </div>
           ) : filterTicketsByStatus("all").length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -109,6 +153,11 @@ const Maintenance = () => {
                 <p className="text-muted-foreground text-center">
                   Aucun ticket de maintenance
                 </p>
+                {isLocataire && selectedLeaseId && selectedLeaseId !== "all" && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Créez un ticket pour signaler un problème
+                  </p>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -185,7 +234,8 @@ const Maintenance = () => {
             ))
           )}
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 };
