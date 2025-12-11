@@ -117,10 +117,10 @@ export const useSpaceInvitations = (spaceId?: string) => {
         .from('space_invitations')
         .select('*')
         .eq('token', token)
-        .single();
+        .maybeSingle();
 
       if (fetchError) throw fetchError;
-      if (!invitation) throw new Error('Invitation non trouvée');
+      if (!invitation) throw new Error('Invitation non trouvée ou invalide');
 
       // Vérifier que l'email correspond
       if (invitation.email !== user.email) {
