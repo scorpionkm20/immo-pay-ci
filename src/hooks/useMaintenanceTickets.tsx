@@ -6,6 +6,16 @@ import { useEffect } from "react";
 export type TicketStatus = "ouvert" | "en_cours" | "resolu" | "ferme";
 export type TicketPriority = "faible" | "moyenne" | "haute" | "urgente";
 
+export interface PropertyInfo {
+  id: string;
+  titre: string;
+  adresse: string;
+  ville: string;
+  quartier: string | null;
+  type_propriete: string;
+  images: string[] | null;
+}
+
 export interface MaintenanceTicket {
   id: string;
   lease_id: string;
@@ -18,6 +28,7 @@ export interface MaintenanceTicket {
   created_at: string;
   updated_at: string;
   space_id: string;
+  property?: PropertyInfo;
 }
 
 export interface MaintenanceIntervention {
@@ -48,17 +59,37 @@ export const useMaintenanceTickets = (leaseId?: string) => {
     queryFn: async () => {
       let query = supabase
         .from("maintenance_tickets")
-        .select("*")
+        .select(`
+          *,
+          leases!inner (
+            property_id,
+            properties (
+              id,
+              titre,
+              adresse,
+              ville,
+              quartier,
+              type_propriete,
+              images
+            )
+          )
+        `)
         .order("created_at", { ascending: false });
 
-      if (leaseId) {
+      if (leaseId && leaseId !== "all") {
         query = query.eq("lease_id", leaseId);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as MaintenanceTicket[];
+      
+      // Transform data to include property at top level
+      return (data || []).map((ticket: any) => ({
+        ...ticket,
+        property: ticket.leases?.properties || null,
+        leases: undefined,
+      })) as MaintenanceTicket[];
     },
   });
 

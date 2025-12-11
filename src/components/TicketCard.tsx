@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, Clock, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertCircle, Clock, CheckCircle, XCircle, ChevronDown, ChevronUp, MapPin, Home } from "lucide-react";
 import { MaintenanceTicket, TicketStatus, useMaintenanceTickets, useMaintenanceInterventions } from "@/hooks/useMaintenanceTickets";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -103,6 +103,35 @@ export const TicketCard = ({ ticket }: TicketCardProps) => {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Property Information */}
+          {ticket.property && (
+            <div className="mb-4 p-3 bg-muted/50 rounded-lg border">
+              <div className="flex items-start gap-3">
+                {ticket.property.images && ticket.property.images.length > 0 ? (
+                  <img
+                    src={ticket.property.images[0]}
+                    alt={ticket.property.titre}
+                    className="w-16 h-16 object-cover rounded-md flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+                    <Home className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-medium text-sm truncate">{ticket.property.titre}</h4>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                    <MapPin className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{ticket.property.adresse}, {ticket.property.ville}</span>
+                  </div>
+                  <Badge variant="outline" className="mt-1 text-xs">
+                    {ticket.property.type_propriete}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+
           <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
           <p className="text-xs text-muted-foreground">
             Créé le {format(new Date(ticket.created_at), "d MMMM yyyy", { locale: fr })}
