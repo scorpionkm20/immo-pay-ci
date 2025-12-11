@@ -6,12 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateTicketDialog } from "@/components/CreateTicketDialog";
 import { TicketCard } from "@/components/TicketCard";
-import { useMaintenanceTickets, TicketStatus } from "@/hooks/useMaintenanceTickets";
+import { useMaintenanceTickets, TicketStatus, TicketPriority } from "@/hooks/useMaintenanceTickets";
 import { useLeases } from "@/hooks/useLeases";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Filter } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Navbar } from "@/components/Navbar";
+import { Badge } from "@/components/ui/badge";
 
 const Maintenance = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Maintenance = () => {
   const { leases, loading: leasesLoading } = useLeases(userRole);
   const [searchParams] = useSearchParams();
   const [selectedLeaseId, setSelectedLeaseId] = useState<string>("all");
+  const [selectedPriority, setSelectedPriority] = useState<TicketPriority | "all">("all");
   const { tickets, isLoading: ticketsLoading } = useMaintenanceTickets(
     selectedLeaseId === "all" ? undefined : selectedLeaseId
   );
@@ -43,24 +45,52 @@ const Maintenance = () => {
     }
   }, [searchParams, leases, isLocataire, selectedLeaseId]);
 
-  const filterTicketsByStatus = (status: TicketStatus | "all") => {
+  const filterTickets = (status: TicketStatus | "all") => {
     if (!tickets) return [];
-    if (status === "all") return tickets;
-    return tickets.filter((ticket) => ticket.statut === status);
+    let filtered = tickets;
+    
+    // Filter by status
+    if (status !== "all") {
+      filtered = filtered.filter((ticket) => ticket.statut === status);
+    }
+    
+    // Filter by priority
+    if (selectedPriority !== "all") {
+      filtered = filtered.filter((ticket) => ticket.priorite === selectedPriority);
+    }
+    
+    return filtered;
   };
 
   const getTicketCounts = () => {
     if (!tickets) return { all: 0, ouvert: 0, en_cours: 0, resolu: 0, ferme: 0 };
+    
+    // Apply priority filter to counts
+    const filteredByPriority = selectedPriority === "all" 
+      ? tickets 
+      : tickets.filter((t) => t.priorite === selectedPriority);
+    
     return {
-      all: tickets.length,
-      ouvert: tickets.filter((t) => t.statut === "ouvert").length,
-      en_cours: tickets.filter((t) => t.statut === "en_cours").length,
-      resolu: tickets.filter((t) => t.statut === "resolu").length,
-      ferme: tickets.filter((t) => t.statut === "ferme").length,
+      all: filteredByPriority.length,
+      ouvert: filteredByPriority.filter((t) => t.statut === "ouvert").length,
+      en_cours: filteredByPriority.filter((t) => t.statut === "en_cours").length,
+      resolu: filteredByPriority.filter((t) => t.statut === "resolu").length,
+      ferme: filteredByPriority.filter((t) => t.statut === "ferme").length,
+    };
+  };
+
+  const getPriorityCounts = () => {
+    if (!tickets) return { urgente: 0, haute: 0, moyenne: 0, faible: 0 };
+    return {
+      urgente: tickets.filter((t) => t.priorite === "urgente").length,
+      haute: tickets.filter((t) => t.priorite === "haute").length,
+      moyenne: tickets.filter((t) => t.priorite === "moyenne").length,
+      faible: tickets.filter((t) => t.priorite === "faible").length,
     };
   };
 
   const counts = getTicketCounts();
+  const priorityCounts = getPriorityCounts();
 
   if (authLoading) {
     return (
@@ -88,36 +118,90 @@ const Maintenance = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Filtrer par bail</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtres
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="lease">Sélectionner un bail</Label>
-              {leasesLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Chargement des baux...
-                </div>
-              ) : leases && leases.length > 0 ? (
-                <Select value={selectedLeaseId} onValueChange={setSelectedLeaseId}>
-                  <SelectTrigger id="lease">
-                    <SelectValue placeholder="Sélectionner un bail" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="lease">Bail</Label>
+                {leasesLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Chargement des baux...
+                  </div>
+                ) : leases && leases.length > 0 ? (
+                  <Select value={selectedLeaseId} onValueChange={setSelectedLeaseId}>
+                    <SelectTrigger id="lease">
+                      <SelectValue placeholder="Sélectionner un bail" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isGestionnaire && <SelectItem value="all">Tous les baux</SelectItem>}
+                      {leases.map((lease) => (
+                        <SelectItem key={lease.id} value={lease.id}>
+                          Bail du {new Date(lease.date_debut).toLocaleDateString("fr-FR")} - {lease.montant_mensuel.toLocaleString("fr-FR")} FCFA/mois
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Aucun bail trouvé. {isLocataire ? "Vous n'avez pas encore de bail actif." : "Créez un bail pour voir les tickets de maintenance."}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priorité</Label>
+                <Select value={selectedPriority} onValueChange={(v) => setSelectedPriority(v as TicketPriority | "all")}>
+                  <SelectTrigger id="priority">
+                    <SelectValue placeholder="Toutes les priorités" />
                   </SelectTrigger>
                   <SelectContent>
-                    {isGestionnaire && <SelectItem value="all">Tous les baux</SelectItem>}
-                    {leases.map((lease) => (
-                      <SelectItem key={lease.id} value={lease.id}>
-                        Bail du {new Date(lease.date_debut).toLocaleDateString("fr-FR")} - {lease.montant_mensuel.toLocaleString("fr-FR")} FCFA/mois
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">Toutes les priorités</SelectItem>
+                    <SelectItem value="urgente">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-red-500" />
+                        Urgente ({priorityCounts.urgente})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="haute">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-orange-500" />
+                        Haute ({priorityCounts.haute})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="moyenne">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-blue-500" />
+                        Moyenne ({priorityCounts.moyenne})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="faible">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-gray-500" />
+                        Faible ({priorityCounts.faible})
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Aucun bail trouvé. {isLocataire ? "Vous n'avez pas encore de bail actif." : "Créez un bail pour voir les tickets de maintenance."}
-                </p>
-              )}
+              </div>
             </div>
+
+            {selectedPriority !== "all" && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Filtre actif:</span>
+                <Badge 
+                  variant="secondary" 
+                  className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => setSelectedPriority("all")}
+                >
+                  Priorité: {selectedPriority} ✕
+                </Badge>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -146,14 +230,16 @@ const Maintenance = () => {
               <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
               <span className="text-muted-foreground">Chargement des tickets...</span>
             </div>
-          ) : filterTicketsByStatus("all").length === 0 ? (
+          ) : filterTickets("all").length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground text-center">
-                  Aucun ticket de maintenance
+                  {selectedPriority !== "all" 
+                    ? `Aucun ticket avec priorité "${selectedPriority}"` 
+                    : "Aucun ticket de maintenance"}
                 </p>
-                {isLocataire && selectedLeaseId && selectedLeaseId !== "all" && (
+                {isLocataire && selectedLeaseId && selectedLeaseId !== "all" && selectedPriority === "all" && (
                   <p className="text-sm text-muted-foreground mt-2">
                     Créez un ticket pour signaler un problème
                   </p>
@@ -161,75 +247,83 @@ const Maintenance = () => {
               </CardContent>
             </Card>
           ) : (
-            filterTicketsByStatus("all").map((ticket) => (
+            filterTickets("all").map((ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))
           )}
         </TabsContent>
 
         <TabsContent value="ouvert" className="space-y-4">
-          {filterTicketsByStatus("ouvert").length === 0 ? (
+          {filterTickets("ouvert").length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground text-center">
-                  Aucun ticket ouvert
+                  {selectedPriority !== "all" 
+                    ? `Aucun ticket ouvert avec priorité "${selectedPriority}"` 
+                    : "Aucun ticket ouvert"}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            filterTicketsByStatus("ouvert").map((ticket) => (
+            filterTickets("ouvert").map((ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))
           )}
         </TabsContent>
 
         <TabsContent value="en_cours" className="space-y-4">
-          {filterTicketsByStatus("en_cours").length === 0 ? (
+          {filterTickets("en_cours").length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground text-center">
-                  Aucun ticket en cours
+                  {selectedPriority !== "all" 
+                    ? `Aucun ticket en cours avec priorité "${selectedPriority}"` 
+                    : "Aucun ticket en cours"}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            filterTicketsByStatus("en_cours").map((ticket) => (
+            filterTickets("en_cours").map((ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))
           )}
         </TabsContent>
 
         <TabsContent value="resolu" className="space-y-4">
-          {filterTicketsByStatus("resolu").length === 0 ? (
+          {filterTickets("resolu").length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground text-center">
-                  Aucun ticket résolu
+                  {selectedPriority !== "all" 
+                    ? `Aucun ticket résolu avec priorité "${selectedPriority}"` 
+                    : "Aucun ticket résolu"}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            filterTicketsByStatus("resolu").map((ticket) => (
+            filterTickets("resolu").map((ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))
           )}
         </TabsContent>
 
         <TabsContent value="ferme" className="space-y-4">
-          {filterTicketsByStatus("ferme").length === 0 ? (
+          {filterTickets("ferme").length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground text-center">
-                  Aucun ticket fermé
+                  {selectedPriority !== "all" 
+                    ? `Aucun ticket fermé avec priorité "${selectedPriority}"` 
+                    : "Aucun ticket fermé"}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            filterTicketsByStatus("ferme").map((ticket) => (
+            filterTickets("ferme").map((ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))
           )}
