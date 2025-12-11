@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useManagementSpaces } from "@/hooks/useManagementSpaces";
 import { useSpaceInvitations } from "@/hooks/useSpaceInvitations";
-import { Building2, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check } from "lucide-react";
+import { Building2, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check, Home, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
+import { Navbar } from "@/components/Navbar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -28,6 +30,7 @@ import {
 import { InviteMemberDialog } from "@/components/InviteMemberDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface SpaceMemberWithProfile {
   id: string;
@@ -44,7 +47,7 @@ interface SpaceMemberWithProfile {
 export default function ManageSpace() {
   const navigate = useNavigate();
   const { currentSpace, fetchSpaceMembers, removeMember } = useManagementSpaces();
-  const { invitations, deleteInvitation } = useSpaceInvitations(currentSpace?.id);
+  const { invitations, deleteInvitation, refreshInvitations, loading: invitationsLoading } = useSpaceInvitations(currentSpace?.id);
   const { user } = useAuth();
   const [members, setMembers] = useState<SpaceMemberWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,8 +76,15 @@ export default function ManageSpace() {
     const { error } = await removeMember(memberToRemove);
     if (!error) {
       loadMembers();
+      toast.success("Membre retiré avec succès");
     }
     setMemberToRemove(null);
+  };
+
+  const handleRefresh = () => {
+    loadMembers();
+    refreshInvitations();
+    toast.success("Données actualisées");
   };
 
   const getRoleBadgeVariant = (role: string) => {
@@ -103,248 +113,301 @@ export default function ManageSpace() {
     }
   };
 
-  const copyInvitationLink = (token: string) => {
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const copyInvitationLink = async (token: string) => {
     const baseUrl = window.location.origin;
     const link = `${baseUrl}/accept-invitation?token=${token}`;
-    navigator.clipboard.writeText(link);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 2000);
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedToken(token);
+      toast.success("Lien copié");
+      setTimeout(() => setCopiedToken(null), 2000);
+    } catch (err) {
+      toast.error("Impossible de copier le lien");
+    }
   };
 
   const pendingInvitations = invitations.filter(inv => !inv.accepted && new Date(inv.expires_at) > new Date());
 
   if (!currentSpace) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Aucun espace sélectionné</CardTitle>
-            <CardDescription>
-              Veuillez sélectionner un espace de gestion pour continuer
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Home className="h-5 w-5" />
+                Aucun espace sélectionné
+              </CardTitle>
+              <CardDescription>
+                Veuillez sélectionner un espace de gestion pour continuer
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate('/dashboard')}>
+                Retour au tableau de bord
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-6">
-        <PageHeader
-          title={currentSpace.nom}
-          description={currentSpace.description}
-          backTo="/home"
-          actions={
-            <Button onClick={() => setInviteDialogOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Inviter un membre
-            </Button>
-          }
-        />
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
+          <PageHeader
+            title={currentSpace.nom}
+            description={currentSpace.description || "Gérez les membres de votre espace"}
+            backTo="/dashboard"
+            actions={
+              <div className="flex gap-2">
+                <Button variant="outline" size="icon" onClick={handleRefresh}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+                <Button onClick={() => setInviteDialogOpen(true)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Inviter un membre
+                </Button>
+              </div>
+            }
+          />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{members.length}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Gestionnaires</CardTitle>
+                <Settings className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {members.filter(m => m.role === 'gestionnaire').length}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Propriétaires</CardTitle>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {members.filter(m => m.role === 'proprietaire').length}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Locataires</CardTitle>
+                <Home className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {members.filter(m => m.role === 'locataire').length}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Pending Invitations */}
+          {pendingInvitations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  Invitations en attente ({pendingInvitations.length})
+                </CardTitle>
+                <CardDescription>
+                  Ces personnes n'ont pas encore accepté leur invitation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {pendingInvitations.map((invitation) => (
+                    <div
+                      key={invitation.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback>{invitation.email[0].toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">{invitation.email}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant={getRoleBadgeVariant(invitation.role)} className="text-xs">
+                              {getRoleLabel(invitation.role)}
+                            </Badge>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              Expire le {new Date(invitation.expires_at).toLocaleDateString('fr-FR')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyInvitationLink(invitation.token)}
+                        >
+                          {copiedToken === invitation.token ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteInvitation(invitation.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Members Table */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Membres</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Membres de l'espace
+              </CardTitle>
+              <CardDescription>
+                Gérez les membres et leurs rôles dans cet espace de gestion
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{members.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gestionnaires</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {members.filter(m => m.role === 'gestionnaire').length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Propriétaires</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {members.filter(m => m.role === 'proprietaire').length}
-              </div>
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 p-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-3 w-1/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : members.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                  <h3 className="font-semibold text-lg mb-2">Aucun membre</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Commencez par inviter des membres à rejoindre votre espace
+                  </p>
+                  <Button onClick={() => setInviteDialogOpen(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Inviter le premier membre
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {members.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={member.profiles?.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {getInitials(member.profiles?.full_name || 'U')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">
+                            {member.profiles?.full_name || 'Sans nom'}
+                            {member.user_id === user?.id && (
+                              <Badge variant="outline" className="ml-2 text-xs">Vous</Badge>
+                            )}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant={getRoleBadgeVariant(member.role)}>
+                              {getRoleLabel(member.role)}
+                            </Badge>
+                            <span>
+                              Depuis le {new Date(member.created_at).toLocaleDateString('fr-FR')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {member.user_id !== user?.id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setMemberToRemove(member.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Pending Invitations */}
-        {pendingInvitations.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                Invitations en attente
-              </CardTitle>
-              <CardDescription>
-                Liens d'invitation non encore acceptés
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Rôle</TableHead>
-                    <TableHead>Expire</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingInvitations.map((invitation) => (
-                    <TableRow key={invitation.id}>
-                      <TableCell className="font-medium">
-                        {invitation.email}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(invitation.role)}>
-                          {getRoleLabel(invitation.role)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {new Date(invitation.expires_at).toLocaleDateString('fr-FR')}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => copyInvitationLink(invitation.token)}
-                          >
-                            {copiedToken === invitation.token ? (
-                              <Check className="h-4 w-4" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteInvitation(invitation.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
+        {/* Invite Dialog */}
+        <InviteMemberDialog
+          open={inviteDialogOpen}
+          onOpenChange={setInviteDialogOpen}
+          spaceId={currentSpace.id}
+          onMemberAdded={() => {
+            loadMembers();
+            refreshInvitations();
+          }}
+        />
 
-        {/* Members Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Membres de l'espace</CardTitle>
-            <CardDescription>
-              Gérez les membres et leurs rôles dans cet espace de gestion
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : members.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Aucun membre dans cet espace</p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => setInviteDialogOpen(true)}
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Inviter le premier membre
-                </Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Rôle</TableHead>
-                    <TableHead>Date d'ajout</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {members.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell className="font-medium">
-                        {member.profiles.full_name || 'Sans nom'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(member.role)}>
-                          {getRoleLabel(member.role)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(member.created_at).toLocaleDateString('fr-FR')}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {member.user_id !== user?.id && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setMemberToRemove(member.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        {/* Remove Member Confirmation */}
+        <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Retirer ce membre ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action retirera le membre de l'espace. Il n'aura plus accès aux données
+                de cet espace de gestion.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleRemoveMember} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Retirer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      {/* Invite Dialog */}
-      <InviteMemberDialog
-        open={inviteDialogOpen}
-        onOpenChange={setInviteDialogOpen}
-        spaceId={currentSpace.id}
-        onMemberAdded={loadMembers}
-      />
-
-      {/* Remove Member Confirmation */}
-      <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Retirer ce membre ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action retirera le membre de l'espace. Il n'aura plus accès aux données
-              de cet espace de gestion.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRemoveMember}>
-              Confirmer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

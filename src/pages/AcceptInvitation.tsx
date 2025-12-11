@@ -1,51 +1,65 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSpaceInvitations } from '@/hooks/useSpaceInvitations';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, LogIn } from 'lucide-react';
 
 const AcceptInvitation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { acceptInvitation } = useSpaceInvitations();
-  const { user } = useAuth();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const { user, loading: authLoading } = useAuth();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'needs_auth'>('loading');
   const [message, setMessage] = useState('');
+  const [processed, setProcessed] = useState(false);
 
   const token = searchParams.get('token');
 
+  const handleAcceptInvitation = useCallback(async () => {
+    if (!token) {
+      setStatus('error');
+      setMessage('Token d\'invitation manquant ou invalide');
+      return;
+    }
+
+    if (authLoading) {
+      return; // Wait for auth to finish loading
+    }
+
+    if (!user) {
+      setStatus('needs_auth');
+      setMessage('Vous devez être connecté pour accepter cette invitation');
+      return;
+    }
+
+    if (processed) return;
+    setProcessed(true);
+
+    const spaceId = await acceptInvitation(token);
+    
+    if (spaceId) {
+      setStatus('success');
+      setMessage('Vous avez rejoint l\'espace avec succès !');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+    } else {
+      setStatus('error');
+      setMessage('Impossible d\'accepter l\'invitation. Elle a peut-être expiré, été utilisée, ou n\'est pas destinée à votre adresse email.');
+    }
+  }, [token, user, authLoading, processed, acceptInvitation, navigate]);
+
   useEffect(() => {
-    const handleAcceptInvitation = async () => {
-      if (!token) {
-        setStatus('error');
-        setMessage('Token d\'invitation manquant');
-        return;
-      }
-
-      if (!user) {
-        // Rediriger vers l'authentification avec le token dans l'URL
-        navigate(`/auth?redirect=/accept-invitation?token=${token}`);
-        return;
-      }
-
-      const spaceId = await acceptInvitation(token);
-      
-      if (spaceId) {
-        setStatus('success');
-        setMessage('Vous avez rejoint l\'espace avec succès !');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
-      } else {
-        setStatus('error');
-        setMessage('Impossible d\'accepter l\'invitation. Elle a peut-être expiré ou été utilisée.');
-      }
-    };
-
     handleAcceptInvitation();
-  }, [token, user]);
+  }, [handleAcceptInvitation]);
+
+  const handleLogin = () => {
+    // Encode the current URL to redirect back after login
+    const redirectUrl = encodeURIComponent(`/accept-invitation?token=${token}`);
+    navigate(`/auth?redirect=${redirectUrl}`);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -54,6 +68,7 @@ const AcceptInvitation = () => {
           <CardTitle>Invitation à rejoindre un espace</CardTitle>
           <CardDescription>
             {status === 'loading' && 'Traitement de votre invitation...'}
+            {status === 'needs_auth' && 'Connexion requise'}
             {status === 'success' && 'Invitation acceptée'}
             {status === 'error' && 'Erreur'}
           </CardDescription>
@@ -68,10 +83,24 @@ const AcceptInvitation = () => {
             </>
           )}
 
+          {status === 'needs_auth' && (
+            <>
+              <LogIn className="h-12 w-12 text-primary" />
+              <p className="text-center">{message}</p>
+              <p className="text-sm text-muted-foreground text-center">
+                Connectez-vous ou créez un compte pour rejoindre l'espace.
+              </p>
+              <Button onClick={handleLogin} className="w-full">
+                <LogIn className="h-4 w-4 mr-2" />
+                Se connecter / S'inscrire
+              </Button>
+            </>
+          )}
+
           {status === 'success' && (
             <>
               <CheckCircle2 className="h-12 w-12 text-green-500" />
-              <p className="text-center">{message}</p>
+              <p className="text-center font-medium">{message}</p>
               <p className="text-sm text-muted-foreground text-center">
                 Redirection vers le tableau de bord...
               </p>
