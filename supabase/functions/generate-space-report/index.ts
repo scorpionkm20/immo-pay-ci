@@ -88,13 +88,33 @@ Deno.serve(async (req) => {
 
     if (ticketsError) throw ticketsError;
 
-    // Fetch members
+    // Fetch members (separate queries since no FK relationship)
     const { data: members, error: membersError } = await supabase
       .from('space_members')
-      .select('*, profiles:user_id(full_name)')
+      .select('*')
       .eq('space_id', spaceId);
 
     if (membersError) throw membersError;
+
+    // Fetch profiles for members
+    let membersWithProfiles = members || [];
+    if (members && members.length > 0) {
+      const userIds = members.map(m => m.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', userIds);
+
+      if (!profilesError && profiles) {
+        membersWithProfiles = members.map(member => {
+          const profile = profiles.find(p => p.user_id === member.user_id);
+          return {
+            ...member,
+            profiles: profile || null
+          };
+        });
+      }
+    }
 
     const reportData: SpaceData = {
       space,
@@ -102,7 +122,7 @@ Deno.serve(async (req) => {
       leases: leases || [],
       payments: payments || [],
       tickets: tickets || [],
-      members: members || [],
+      members: membersWithProfiles,
     };
 
     // Generate HTML report
