@@ -196,24 +196,48 @@ export const useManagementSpaces = () => {
   };
 
   const fetchSpaceMembers = async (spaceId: string) => {
-    const { data, error } = await supabase
+    // D'abord récupérer les membres
+    const { data: members, error: membersError } = await supabase
       .from('space_members')
-      .select(`
-        *,
-        profiles:user_id (full_name, avatar_url)
-      `)
+      .select('*')
       .eq('space_id', spaceId);
 
-    if (error) {
+    if (membersError) {
       toast({
         variant: "destructive",
         title: "Erreur",
         description: "Impossible de charger les membres"
       });
-      return { data: null, error };
+      return { data: null, error: membersError };
     }
 
-    return { data, error: null };
+    if (!members || members.length === 0) {
+      return { data: [], error: null };
+    }
+
+    // Ensuite récupérer les profils pour ces membres
+    const userIds = members.map(m => m.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, avatar_url')
+      .in('user_id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      // Retourner les membres sans les profils
+      return { data: members.map(m => ({ ...m, profiles: null })), error: null };
+    }
+
+    // Combiner les données
+    const membersWithProfiles = members.map(member => {
+      const profile = profiles?.find(p => p.user_id === member.user_id);
+      return {
+        ...member,
+        profiles: profile || null
+      };
+    });
+
+    return { data: membersWithProfiles, error: null };
   };
 
   const addMember = async (spaceId: string, userId: string, role: 'admin' | 'gestionnaire' | 'proprietaire' | 'locataire') => {
