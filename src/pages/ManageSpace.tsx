@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useManagementSpaces } from "@/hooks/useManagementSpaces";
 import { useSpaceInvitations } from "@/hooks/useSpaceInvitations";
-import { Building2, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check, Home, Loader2, RefreshCw } from "lucide-react";
+import { Building2, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check, Home, Loader2, RefreshCw, CheckCircle2, XCircle, History } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -136,6 +138,18 @@ export default function ManageSpace() {
   };
 
   const pendingInvitations = invitations.filter(inv => !inv.accepted && new Date(inv.expires_at) > new Date());
+  const acceptedInvitations = invitations.filter(inv => inv.accepted);
+  const expiredInvitations = invitations.filter(inv => !inv.accepted && new Date(inv.expires_at) <= new Date());
+
+  const getInvitationStatus = (invitation: typeof invitations[0]) => {
+    if (invitation.accepted) {
+      return { label: 'Acceptée', variant: 'default' as const, icon: CheckCircle2, color: 'text-green-500' };
+    }
+    if (new Date(invitation.expires_at) <= new Date()) {
+      return { label: 'Expirée', variant: 'destructive' as const, icon: XCircle, color: 'text-destructive' };
+    }
+    return { label: 'En attente', variant: 'secondary' as const, icon: Clock, color: 'text-orange-500' };
+  };
 
   if (!currentSpace) {
     return (
@@ -291,8 +305,134 @@ export default function ManageSpace() {
                   ))}
                 </div>
               </CardContent>
-            </Card>
+          </Card>
           )}
+
+          {/* Invitation History */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Historique des invitations
+              </CardTitle>
+              <CardDescription>
+                Toutes les invitations envoyées et leur statut actuel
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {invitationsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 p-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-3 w-1/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : invitations.length === 0 ? (
+                <div className="text-center py-8">
+                  <Mail className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                  <p className="text-muted-foreground">Aucune invitation envoyée</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Rôle</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Date d'envoi</TableHead>
+                      <TableHead>Expiration / Acceptation</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invitations.map((invitation) => {
+                      const status = getInvitationStatus(invitation);
+                      const StatusIcon = status.icon;
+                      return (
+                        <TableRow key={invitation.id}>
+                          <TableCell className="font-medium">{invitation.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={getRoleBadgeVariant(invitation.role)}>
+                              {getRoleLabel(invitation.role)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <StatusIcon className={`h-4 w-4 ${status.color}`} />
+                              <Badge variant={status.variant}>{status.label}</Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {format(new Date(invitation.created_at), 'dd MMM yyyy', { locale: fr })}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {invitation.accepted && invitation.accepted_at ? (
+                              <span className="text-green-600">
+                                Acceptée le {format(new Date(invitation.accepted_at), 'dd MMM yyyy', { locale: fr })}
+                              </span>
+                            ) : (
+                              <span className={new Date(invitation.expires_at) <= new Date() ? 'text-destructive' : ''}>
+                                {format(new Date(invitation.expires_at), 'dd MMM yyyy', { locale: fr })}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              {!invitation.accepted && new Date(invitation.expires_at) > new Date() && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyInvitationLink(invitation.token)}
+                                >
+                                  {copiedToken === invitation.token ? (
+                                    <Check className="h-4 w-4 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteInvitation(invitation.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+              
+              {/* Summary */}
+              {invitations.length > 0 && (
+                <div className="flex gap-4 mt-4 pt-4 border-t">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="h-3 w-3 rounded-full bg-green-500" />
+                    <span>{acceptedInvitations.length} acceptée(s)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="h-3 w-3 rounded-full bg-orange-500" />
+                    <span>{pendingInvitations.length} en attente</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="h-3 w-3 rounded-full bg-destructive" />
+                    <span>{expiredInvitations.length} expirée(s)</span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+
 
           {/* Members Table */}
           <Card>
