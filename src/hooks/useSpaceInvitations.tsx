@@ -107,6 +107,51 @@ export const useSpaceInvitations = (spaceId?: string) => {
     }
   };
 
+  const resendInvitation = async (invitationId: string): Promise<string | null> => {
+    try {
+      // Récupérer l'invitation existante
+      const { data: existingInvitation, error: fetchError } = await supabase
+        .from('space_invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .single();
+
+      if (fetchError || !existingInvitation) {
+        throw new Error('Invitation non trouvée');
+      }
+
+      // Générer un nouveau token
+      const newToken = crypto.randomUUID();
+      
+      // Nouvelle expiration dans 7 jours
+      const newExpiresAt = new Date();
+      newExpiresAt.setDate(newExpiresAt.getDate() + 7);
+
+      // Mettre à jour l'invitation
+      const { error: updateError } = await supabase
+        .from('space_invitations')
+        .update({
+          token: newToken,
+          expires_at: newExpiresAt.toISOString(),
+          accepted: false,
+          accepted_by: null,
+          accepted_at: null,
+        })
+        .eq('id', invitationId);
+
+      if (updateError) throw updateError;
+
+      toast.success('Invitation renvoyée avec succès');
+      await fetchInvitations();
+      
+      return newToken;
+    } catch (error: any) {
+      console.error('Erreur lors du renvoi:', error);
+      toast.error('Impossible de renvoyer l\'invitation');
+      return null;
+    }
+  };
+
   const acceptInvitation = async (token: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -174,6 +219,7 @@ export const useSpaceInvitations = (spaceId?: string) => {
     loading,
     createInvitation,
     deleteInvitation,
+    resendInvitation,
     acceptInvitation,
     refreshInvitations: fetchInvitations,
   };

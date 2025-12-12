@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useManagementSpaces } from "@/hooks/useManagementSpaces";
 import { useSpaceInvitations } from "@/hooks/useSpaceInvitations";
-import { Building2, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check, Home, Loader2, RefreshCw, CheckCircle2, XCircle, History } from "lucide-react";
+import { Building2, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check, Home, Loader2, RefreshCw, CheckCircle2, XCircle, History, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -49,13 +49,33 @@ interface SpaceMemberWithProfile {
 export default function ManageSpace() {
   const navigate = useNavigate();
   const { currentSpace, fetchSpaceMembers, removeMember } = useManagementSpaces();
-  const { invitations, deleteInvitation, refreshInvitations, loading: invitationsLoading } = useSpaceInvitations(currentSpace?.id);
+  const { invitations, deleteInvitation, resendInvitation, refreshInvitations, loading: invitationsLoading } = useSpaceInvitations(currentSpace?.id);
   const { user } = useAuth();
   const [members, setMembers] = useState<SpaceMemberWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const handleResendInvitation = async (invitationId: string) => {
+    setResendingId(invitationId);
+    const newToken = await resendInvitation(invitationId);
+    setResendingId(null);
+    if (newToken) {
+      // Copier automatiquement le nouveau lien
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/accept-invitation?token=${newToken}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        setCopiedToken(newToken);
+        toast.success("Invitation renvoyée et lien copié !");
+        setTimeout(() => setCopiedToken(null), 2000);
+      } catch (err) {
+        // Le lien n'a pas pu être copié mais l'invitation a été renvoyée
+      }
+    }
+  };
 
   const loadMembers = async () => {
     if (!currentSpace) return;
@@ -383,6 +403,24 @@ export default function ManageSpace() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
+                              {/* Bouton renvoyer pour les invitations expirées */}
+                              {!invitation.accepted && new Date(invitation.expires_at) <= new Date() && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleResendInvitation(invitation.id)}
+                                  disabled={resendingId === invitation.id}
+                                  className="gap-1"
+                                >
+                                  {resendingId === invitation.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <RotateCcw className="h-4 w-4" />
+                                  )}
+                                  <span className="hidden sm:inline">Renvoyer</span>
+                                </Button>
+                              )}
+                              {/* Bouton copier pour les invitations en attente */}
                               {!invitation.accepted && new Date(invitation.expires_at) > new Date() && (
                                 <Button
                                   variant="outline"
