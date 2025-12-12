@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useManagementSpaces } from "@/hooks/useManagementSpaces";
 import { useSpaceInvitations } from "@/hooks/useSpaceInvitations";
-import { Building2, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check, Home, Loader2, RefreshCw, CheckCircle2, XCircle, History, RotateCcw } from "lucide-react";
+import { Building2, Trash2, UserPlus, Settings, Users, Mail, Clock, Copy, Check, Home, Loader2, RefreshCw, CheckCircle2, XCircle, History, RotateCcw, FileDown } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import { InviteMemberDialog } from "@/components/InviteMemberDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SpaceMemberWithProfile {
   id: string;
@@ -57,6 +58,42 @@ export default function ManageSpace() {
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
+
+  const handleExportPDF = async () => {
+    if (!currentSpace) return;
+    
+    setGeneratingReport(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vous devez être connecté');
+        return;
+      }
+
+      const response = await supabase.functions.invoke('generate-space-report', {
+        body: { spaceId: currentSpace.id },
+      });
+
+      if (response.error) throw response.error;
+      if (!response.data?.success) throw new Error(response.data?.error || 'Erreur inconnue');
+
+      // Ouvrir le rapport dans un nouvel onglet pour impression/PDF
+      const reportWindow = window.open('', '_blank');
+      if (reportWindow) {
+        reportWindow.document.write(response.data.html);
+        reportWindow.document.close();
+        toast.success('Rapport généré - Utilisez Ctrl+P pour imprimer en PDF');
+      } else {
+        toast.error('Impossible d\'ouvrir le rapport. Vérifiez les bloqueurs de popups.');
+      }
+    } catch (error: any) {
+      console.error('Erreur génération rapport:', error);
+      toast.error(error.message || 'Impossible de générer le rapport');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
 
   const handleResendInvitation = async (invitationId: string) => {
     setResendingId(invitationId);
@@ -208,6 +245,18 @@ export default function ManageSpace() {
             backTo="/dashboard"
             actions={
               <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleExportPDF}
+                  disabled={generatingReport}
+                >
+                  {generatingReport ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <FileDown className="h-4 w-4 mr-2" />
+                  )}
+                  Exporter PDF
+                </Button>
                 <Button variant="outline" size="icon" onClick={handleRefresh}>
                   <RefreshCw className="h-4 w-4" />
                 </Button>
