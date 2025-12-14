@@ -124,6 +124,104 @@ export const useDashboardStats = () => {
             latePayments,
           },
         };
+      } else if (userRole === 'proprietaire') {
+        // Stats pour propriétaire - propriétés dont ils sont propriétaires
+        const [propertiesResult, leasesResult, ticketsResult, paymentsResult, allPaymentsResult] = await Promise.all([
+          supabase
+            .from('properties')
+            .select('*, leases(*)', { count: 'exact' })
+            .eq('proprietaire_id', user.id),
+          supabase
+            .from('leases')
+            .select('*, properties!inner(proprietaire_id)', { count: 'exact' })
+            .eq('properties.proprietaire_id', user.id)
+            .eq('statut', 'actif'),
+          supabase
+            .from('maintenance_tickets')
+            .select('*, leases!inner(properties!inner(proprietaire_id))', { count: 'exact' })
+            .eq('leases.properties.proprietaire_id', user.id)
+            .in('statut', ['ouvert', 'en_cours']),
+          supabase
+            .from('payments')
+            .select('montant, leases!inner(properties!inner(proprietaire_id))')
+            .eq('leases.properties.proprietaire_id', user.id)
+            .eq('statut', 'reussi')
+            .gte('date_paiement', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+          supabase
+            .from('payments')
+            .select('montant, date_paiement, mois_paiement, statut, leases!inner(property_id, properties!inner(titre, proprietaire_id))')
+            .eq('leases.properties.proprietaire_id', user.id)
+            .gte('date_paiement', new Date(new Date().getFullYear() - 1, 0, 1).toISOString())
+            .order('date_paiement', { ascending: true })
+        ]);
+
+        const totalRevenue = paymentsResult.data?.reduce((sum, payment) => sum + Number(payment.montant), 0) || 0;
+
+        // Calculate monthly revenue chart data
+        const monthlyRevenueData = allPaymentsResult.data?.reduce((acc: any[], payment: any) => {
+          if (payment.statut !== 'reussi') return acc;
+          const date = new Date(payment.date_paiement);
+          const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          const existing = acc.find(item => item.month === monthYear);
+          if (existing) {
+            existing.revenue += Number(payment.montant);
+          } else {
+            acc.push({ month: monthYear, revenue: Number(payment.montant) });
+          }
+          return acc;
+        }, []).sort((a: any, b: any) => a.month.localeCompare(b.month)) || [];
+
+        // Calculate revenue by property
+        const revenueByProperty = allPaymentsResult.data?.reduce((acc: any[], payment: any) => {
+          if (payment.statut !== 'reussi') return acc;
+          const propertyTitle = payment.leases?.properties?.titre || 'N/A';
+          const existing = acc.find(item => item.property === propertyTitle);
+          if (existing) {
+            existing.revenue += Number(payment.montant);
+          } else {
+            acc.push({ property: propertyTitle, revenue: Number(payment.montant) });
+          }
+          return acc;
+        }, []).sort((a: any, b: any) => b.revenue - a.revenue).slice(0, 10) || [];
+
+        // Calculate occupancy rate
+        const totalProperties = propertiesResult.count || 1;
+        const activeLeases = leasesResult.count || 0;
+        const occupancyRate = (activeLeases / totalProperties) * 100;
+
+        // Late payments
+        const latePayments = allPaymentsResult.data?.filter((p: any) => {
+          if (p.statut !== 'en_attente') return false;
+          const dueDate = new Date(p.mois_paiement);
+          return dueDate < new Date();
+        }).length || 0;
+
+        // Get properties with details for chart
+        const propertiesWithDetails = propertiesResult.data?.map((prop: any) => ({
+          id: prop.id,
+          titre: prop.titre,
+          statut: prop.statut,
+          prix_mensuel: prop.prix_mensuel,
+          ville: prop.ville,
+          hasActiveLease: prop.leases?.some((l: any) => l.statut === 'actif') || false
+        })) || [];
+
+        return {
+          totalProperties: propertiesResult.count || 0,
+          activeLeases: leasesResult.count || 0,
+          openTickets: ticketsResult.count || 0,
+          monthlyRevenue: totalRevenue,
+          propertiesWithDetails,
+          chartData: {
+            monthlyRevenue: monthlyRevenueData,
+            revenueByProperty,
+          },
+          kpis: {
+            occupancyRate: Math.round(occupancyRate),
+            latePayments,
+            pendingValidation: propertiesResult.data?.filter((p: any) => !p.validation_proprietaire).length || 0,
+          },
+        };
       } else if (userRole === 'locataire') {
         // Stats pour locataire
         const [leasesResult, ticketsResult, paymentsResult, documentsResult] = await Promise.all([
