@@ -8,8 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Navbar } from '@/components/Navbar';
-import { Building2, UserPlus, LogIn } from 'lucide-react';
+import { Building2, UserPlus, LogIn, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const signUpSchema = z.object({
   email: z.string().trim().email({ message: "Email invalide" }),
@@ -27,6 +29,7 @@ const signInSchema = z.object({
 const Auth = () => {
   const navigate = useNavigate();
   const { signUp, signIn } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
   // Sign Up Form State
@@ -45,6 +48,45 @@ const Auth = () => {
     password: ''
   });
   const [signInErrors, setSignInErrors] = useState<any>({});
+
+  // Forgot Password State
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotPasswordEmail.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez entrer votre adresse email"
+      });
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+      redirectTo: `${window.location.origin}/auth?reset=true`
+    });
+    setForgotPasswordLoading(false);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message
+      });
+    } else {
+      toast({
+        title: "Email envoyé",
+        description: "Un lien de réinitialisation a été envoyé à votre adresse email."
+      });
+      setShowForgotPassword(false);
+      setForgotPasswordEmail('');
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +160,48 @@ const Auth = () => {
           </div>
 
           <Card className="border-2 shadow-lg">
+            {showForgotPassword ? (
+              <>
+                <CardHeader>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-fit mb-2"
+                    onClick={() => setShowForgotPassword(false)}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Retour
+                  </Button>
+                  <CardTitle className="text-2xl">Mot de passe oublié</CardTitle>
+                  <CardDescription>
+                    Entrez votre email pour recevoir un lien de réinitialisation
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="forgot-email">Email</Label>
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="votre@email.com"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-primary hover:bg-primary-hover" 
+                      disabled={forgotPasswordLoading}
+                    >
+                      {forgotPasswordLoading ? 'Envoi...' : 'Envoyer le lien'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </>
+            ) : (
+              <>
             <CardHeader>
               <CardTitle className="text-2xl">Bienvenue</CardTitle>
               <CardDescription>
@@ -172,6 +256,15 @@ const Auth = () => {
                 <Button type="submit" className="w-full bg-primary hover:bg-primary-hover" disabled={loading}>
                   <LogIn className="mr-2 h-4 w-4" />
                   {loading ? 'Connexion...' : 'Se connecter'}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-muted-foreground"
+                  onClick={() => setShowForgotPassword(true)}
+                >
+                  Mot de passe oublié ?
                 </Button>
               </form>
             </TabsContent>
@@ -266,6 +359,8 @@ const Auth = () => {
             </TabsContent>
           </Tabs>
         </CardContent>
+              </>
+            )}
       </Card>
         </div>
       </div>
