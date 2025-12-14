@@ -131,6 +131,41 @@ const Dashboard = () => {
     },
   ];
 
+  const getProprietaireStats = () => [
+    {
+      title: 'Mes Propriétés',
+      value: stats?.totalProperties || 0,
+      icon: Building2,
+      description: 'Biens immobiliers',
+      color: 'text-primary',
+      bgColor: 'bg-primary-light',
+    },
+    {
+      title: 'Propriétés Louées',
+      value: stats?.activeLeases || 0,
+      icon: Home,
+      description: 'Avec locataires actifs',
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
+    },
+    {
+      title: 'Tickets en Cours',
+      value: stats?.openTickets || 0,
+      icon: Wrench,
+      description: 'Maintenance',
+      color: 'text-destructive',
+      bgColor: 'bg-red-100',
+    },
+    {
+      title: 'Revenus du Mois',
+      value: `${stats?.monthlyRevenue?.toLocaleString() || 0} FCFA`,
+      icon: TrendingUp,
+      description: 'Loyers perçus',
+      color: 'text-secondary',
+      bgColor: 'bg-secondary-light',
+    },
+  ];
+
   const getLocataireStats = () => [
     {
       title: 'Baux Actifs',
@@ -166,7 +201,11 @@ const Dashboard = () => {
     },
   ];
 
-  const statsCards = userRole === 'gestionnaire' ? getGestionnaireStats() : getLocataireStats();
+  const statsCards = userRole === 'gestionnaire' 
+    ? getGestionnaireStats() 
+    : userRole === 'proprietaire' 
+      ? getProprietaireStats() 
+      : getLocataireStats();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -514,6 +553,146 @@ const Dashboard = () => {
           </>
         )}
 
+        {/* Propriétaire Dashboard Section */}
+        {userRole === 'proprietaire' && stats?.chartData && (
+          <>
+            {/* KPI Cards */}
+            <div className="grid gap-6 md:grid-cols-3 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Taux d'Occupation</CardTitle>
+                  <Percent className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.kpis?.occupancyRate || 0}%</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats.activeLeases} / {stats.totalProperties} propriétés louées
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Paiements en Retard</CardTitle>
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.kpis?.latePayments || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Loyers impayés</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">En Attente de Validation</CardTitle>
+                  <Clock className="h-5 w-5 text-orange-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.kpis?.pendingValidation || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Propriétés à valider</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts Grid */}
+            <div className="grid gap-6 lg:grid-cols-2 mb-8">
+              {/* Monthly Revenue Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenus Mensuels</CardTitle>
+                  <CardDescription>Évolution des loyers perçus sur 12 mois</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={stats.chartData.monthlyRevenue}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="month" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                        formatter={(value: any) => `${Number(value).toLocaleString()} FCFA`}
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} name="Revenus" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Revenue by Property Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenus par Propriété</CardTitle>
+                  <CardDescription>Performance de vos biens</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={stats.chartData.revenueByProperty}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="property" className="text-xs" angle={-45} textAnchor="end" height={100} />
+                      <YAxis className="text-xs" />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                        formatter={(value: any) => `${Number(value).toLocaleString()} FCFA`}
+                      />
+                      <Bar dataKey="revenue" fill="hsl(var(--primary))" name="Revenus" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Properties Table */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Mes Propriétés</CardTitle>
+                  <CardDescription>État de vos biens immobiliers</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">Propriété</th>
+                          <th className="text-left p-2">Ville</th>
+                          <th className="text-right p-2">Loyer</th>
+                          <th className="text-center p-2">Statut</th>
+                          <th className="text-center p-2">Locataire</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats.propertiesWithDetails?.map((prop: any) => (
+                          <tr key={prop.id} className="border-b hover:bg-muted/50">
+                            <td className="p-2 font-medium">{prop.titre}</td>
+                            <td className="p-2">{prop.ville}</td>
+                            <td className="text-right p-2">{prop.prix_mensuel?.toLocaleString('fr-FR')} FCFA</td>
+                            <td className="text-center p-2">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                prop.statut === 'disponible' ? 'bg-green-100 text-green-700' :
+                                prop.statut === 'loue' ? 'bg-blue-100 text-blue-700' :
+                                'bg-orange-100 text-orange-700'
+                              }`}>
+                                {prop.statut === 'disponible' ? 'Disponible' :
+                                 prop.statut === 'loue' ? 'Loué' : 'En attente'}
+                              </span>
+                            </td>
+                            <td className="text-center p-2">
+                              {prop.hasActiveLease ? (
+                                <span className="text-green-600">✓</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+
         {/* Locataire Section - AI Bedroom Designer */}
         {userRole === 'locataire' && (
           <div className="mb-8 space-y-6">
@@ -600,6 +779,23 @@ const Dashboard = () => {
                   <Button onClick={() => navigate('/payment-history')} variant="outline" className="w-full h-auto py-6 flex flex-col gap-2">
                     <BarChart3 className="h-6 w-6" />
                     <span>Historique Paiements</span>
+                  </Button>
+                </>
+              )}
+
+              {userRole === 'proprietaire' && (
+                <>
+                  <Button onClick={() => navigate('/my-properties')} variant="outline" className="w-full h-auto py-6 flex flex-col gap-2">
+                    <Building2 className="h-6 w-6" />
+                    <span>Mes Propriétés</span>
+                  </Button>
+                  <Button onClick={() => navigate('/payment-history')} variant="outline" className="w-full h-auto py-6 flex flex-col gap-2">
+                    <DollarSign className="h-6 w-6" />
+                    <span>Historique des Loyers</span>
+                  </Button>
+                  <Button onClick={() => navigate('/analytics')} variant="outline" className="w-full h-auto py-6 flex flex-col gap-2">
+                    <TrendingUp className="h-6 w-6" />
+                    <span>Analyses Financières</span>
                   </Button>
                 </>
               )}
