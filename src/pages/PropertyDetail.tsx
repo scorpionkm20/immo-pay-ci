@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { RequestPropertyDialog } from "@/components/RequestPropertyDialog";
+import { PaymentSection } from "@/components/PaymentSection";
 import {
   ArrowLeft,
   MapPin,
@@ -21,6 +22,8 @@ import {
   ChevronLeft,
   ChevronRight,
   FileCheck,
+  CreditCard,
+  CheckCircle,
 } from "lucide-react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -36,18 +39,63 @@ const PropertyDetail = () => {
   const [sending, setSending] = useState(false);
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState<{
+    leaseId: string;
+    montant: number;
+    moisPaiement: string;
+    isCaution: boolean;
+  } | null>(null);
+  const [showPaymentSection, setShowPaymentSection] = useState(false);
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
     fetchPropertyDetails();
-  }, [id]);
+    if (user && userRole === 'locataire') {
+      checkPendingPayment();
+    }
+  }, [id, user, userRole]);
 
   useEffect(() => {
     if (property?.latitude && property?.longitude && mapContainer.current && !map.current) {
       initializeMap();
     }
   }, [property]);
+
+  const checkPendingPayment = async () => {
+    if (!user || !id) return;
+
+    // Vérifier si l'utilisateur a un bail actif pour cette propriété avec un paiement en attente
+    const { data: leases } = await supabase
+      .from('leases')
+      .select('id, caution_montant, caution_payee, montant_mensuel')
+      .eq('property_id', id)
+      .eq('locataire_id', user.id)
+      .eq('statut', 'actif');
+
+    if (leases && leases.length > 0) {
+      const lease = leases[0];
+      
+      // Récupérer le paiement en attente
+      const { data: payments } = await supabase
+        .from('payments')
+        .select('id, montant, mois_paiement')
+        .eq('lease_id', lease.id)
+        .eq('statut', 'en_attente')
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      if (payments && payments.length > 0) {
+        const payment = payments[0];
+        setPendingPayment({
+          leaseId: lease.id,
+          montant: payment.montant,
+          moisPaiement: payment.mois_paiement,
+          isCaution: payment.montant === lease.caution_montant && !lease.caution_payee
+        });
+      }
+    }
+  };
 
   const initializeMap = async () => {
     if (!property?.latitude || !property?.longitude || !mapContainer.current) return;
@@ -434,8 +482,54 @@ const PropertyDetail = () => {
                   </div>
                 )}
 
+                {/* Section de paiement direct pour locataire avec bail actif */}
+                {user && userRole === 'locataire' && pendingPayment && (
+                  <Card className="border-primary bg-primary/5">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                        Paiement en attente
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          {pendingPayment.isCaution ? 'Caution' : 'Loyer'}
+                        </span>
+                        <span className="text-xl font-bold text-primary">
+                          {pendingPayment.montant.toLocaleString()} FCFA
+                        </span>
+                      </div>
+                      
+                      {showPaymentSection ? (
+                        <PaymentSection
+                          leaseId={pendingPayment.leaseId}
+                          montant={pendingPayment.montant}
+                          moisPaiement={pendingPayment.moisPaiement}
+                          isCaution={pendingPayment.isCaution}
+                          propertyTitle={property?.titre}
+                          onSuccess={() => {
+                            setPendingPayment(null);
+                            setShowPaymentSection(false);
+                            toast.success("Paiement effectué avec succès !");
+                          }}
+                          onClose={() => setShowPaymentSection(false)}
+                        />
+                      ) : (
+                        <Button 
+                          onClick={() => setShowPaymentSection(true)}
+                          className="w-full"
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Payer maintenant
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Demande de location formelle */}
-                {user && userRole === 'locataire' && property?.statut === 'disponible' && (
+                {user && userRole === 'locataire' && property?.statut === 'disponible' && !pendingPayment && (
                   <div className="space-y-2">
                     <Button
                       onClick={() => setRequestDialogOpen(true)}

@@ -6,7 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home, Calendar, DollarSign, CheckCircle, XCircle, FileText, Wrench } from 'lucide-react';
+import { ArrowLeft, Home, Calendar, DollarSign, CheckCircle, XCircle, FileText, Wrench, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { PaymentSection } from '@/components/PaymentSection';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface LeaseWithProperty extends Lease {
   property?: {
@@ -18,14 +20,20 @@ interface LeaseWithProperty extends Lease {
     full_name: string;
     email: string;
   };
+  pendingPayment?: {
+    id: string;
+    montant: number;
+    mois_paiement: string;
+    isCaution: boolean;
+  };
 }
 
 const MyLeases = () => {
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
-  // AUTORISATION + FILTRAGE : useLeases filtre déjà par rôle et user_id
-  const { leases, loading } = useLeases(userRole);
+  const { leases, loading, refetch } = useLeases(userRole);
   const [myLeases, setMyLeases] = useState<LeaseWithProperty[]>([]);
+  const [expandedPayment, setExpandedPayment] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -37,10 +45,8 @@ const MyLeases = () => {
   }, [leases, user, userRole]);
 
   const fetchLeasesWithDetails = async () => {
-    // Les baux sont déjà filtrés par useLeases selon le rôle et l'utilisateur connecté
     const filteredLeases = leases;
 
-    // Fetch property and locataire details
     const leasesWithDetails = await Promise.all(
       filteredLeases.map(async (lease) => {
         const { data: property } = await supabase
@@ -55,13 +61,36 @@ const MyLeases = () => {
           .eq('user_id', lease.locataire_id)
           .maybeSingle();
 
+        // Récupérer le paiement en attente (caution ou loyer)
+        let pendingPayment = undefined;
+        if (userRole === 'locataire') {
+          const { data: payments } = await supabase
+            .from('payments')
+            .select('id, montant, mois_paiement')
+            .eq('lease_id', lease.id)
+            .eq('statut', 'en_attente')
+            .order('created_at', { ascending: true })
+            .limit(1);
+
+          if (payments && payments.length > 0) {
+            const payment = payments[0];
+            pendingPayment = {
+              id: payment.id,
+              montant: payment.montant,
+              mois_paiement: payment.mois_paiement,
+              isCaution: payment.montant === lease.caution_montant && !lease.caution_payee
+            };
+          }
+        }
+
         return {
           ...lease,
           property: property || undefined,
           locataire: locataireProfile ? {
             full_name: locataireProfile.full_name,
             email: locataireProfile.phone || ''
-          } : undefined
+          } : undefined,
+          pendingPayment
         };
       })
     );
@@ -80,6 +109,11 @@ const MyLeases = () => {
     }
   };
 
+  const handlePaymentSuccess = () => {
+    refetch();
+    setExpandedPayment(null);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -91,7 +125,7 @@ const MyLeases = () => {
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="container max-w-4xl mx-auto px-4">
-        <Button variant="ghost" onClick={() => navigate('/')} className="mb-4">
+        <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Retour
         </Button>
@@ -199,7 +233,46 @@ const MyLeases = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2">
+                  {/* Section de paiement pour locataires avec paiement en attente */}
+                  {userRole === 'locataire' && lease.pendingPayment && lease.statut === 'actif' && (
+                    <Collapsible
+                      open={expandedPayment === lease.id}
+                      onOpenChange={(open) => setExpandedPayment(open ? lease.id : null)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button 
+                          variant={lease.pendingPayment.isCaution ? "default" : "outline"}
+                          className="w-full justify-between"
+                        >
+                          <span className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            {lease.pendingPayment.isCaution 
+                              ? `Payer la caution (${lease.pendingPayment.montant.toLocaleString()} FCFA)`
+                              : `Payer le loyer (${lease.pendingPayment.montant.toLocaleString()} FCFA)`
+                            }
+                          </span>
+                          {expandedPayment === lease.id ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-4">
+                        <PaymentSection
+                          leaseId={lease.id}
+                          montant={lease.pendingPayment.montant}
+                          moisPaiement={lease.pendingPayment.mois_paiement}
+                          isCaution={lease.pendingPayment.isCaution}
+                          propertyTitle={lease.property?.titre}
+                          onSuccess={handlePaymentSuccess}
+                          onClose={() => setExpandedPayment(null)}
+                        />
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+
+                  <div className="flex gap-2 pt-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
@@ -223,11 +296,6 @@ const MyLeases = () => {
                       <Wrench className="h-4 w-4 mr-2" />
                       Maintenance
                     </Button>
-                    {userRole === 'locataire' && lease.statut === 'actif' && (
-                      <Button size="sm" onClick={() => navigate('/payments')}>
-                        Payer le loyer
-                      </Button>
-                    )}
                   </div>
                 </CardContent>
               </Card>
