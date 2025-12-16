@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const MAX_CONSECUTIVE_FAILURES = 3;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -32,7 +34,7 @@ serve(async (req) => {
     // Fetch lease to attach space_id (required) and to let RLS validate ownership
     const { data: lease, error: leaseError } = await supabaseClient
       .from('leases')
-      .select('id, space_id')
+      .select('id, space_id, gestionnaire_id, locataire_id')
       .eq('id', lease_id)
       .single();
 
@@ -169,14 +171,14 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
     const errorCode = (error as any)?.code || 'UNKNOWN';
     
-    // Log error to audit_logs using service role client
+    // Log error to audit_logs and check for consecutive failures
     try {
       const serviceClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      // Get user ID from JWT token
+      // Get user ID and lease info from request
       const authHeader = req.headers.get('Authorization');
       let userId = '00000000-0000-0000-0000-000000000000';
       if (authHeader) {
@@ -186,18 +188,90 @@ serve(async (req) => {
           userId = payload.sub || userId;
         } catch {}
       }
+
+      // Parse request body to get lease_id
+      let leaseId: string | null = null;
+      try {
+        const body = await req.clone().json();
+        leaseId = body.lease_id;
+      } catch {}
       
+      // Log the payment error
       await serviceClient.from('audit_logs').insert({
         user_id: userId,
         action: 'payment_error',
         resource_type: 'payment',
+        resource_id: leaseId,
         details: {
           error_message: errorMessage,
           error_code: errorCode,
+          lease_id: leaseId,
           timestamp: new Date().toISOString()
         }
       });
       console.log('Payment error logged to audit_logs');
+
+      // Check consecutive failures for this user/lease
+      if (leaseId && userId !== '00000000-0000-0000-0000-000000000000') {
+        const { data: recentErrors, error: countError } = await serviceClient
+          .from('audit_logs')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('action', 'payment_error')
+          .eq('resource_id', leaseId)
+          .order('created_at', { ascending: false })
+          .limit(MAX_CONSECUTIVE_FAILURES);
+
+        if (!countError && recentErrors && recentErrors.length >= MAX_CONSECUTIVE_FAILURES) {
+          console.log(`User ${userId} has reached ${MAX_CONSECUTIVE_FAILURES} consecutive payment failures`);
+          
+          // Get lease to find manager
+          const { data: lease } = await serviceClient
+            .from('leases')
+            .select('gestionnaire_id, property_id')
+            .eq('id', leaseId)
+            .single();
+
+          if (lease?.gestionnaire_id) {
+            // Get tenant name
+            const { data: tenantProfile } = await serviceClient
+              .from('profiles')
+              .select('full_name')
+              .eq('user_id', userId)
+              .single();
+
+            // Get property title
+            const { data: property } = await serviceClient
+              .from('properties')
+              .select('titre')
+              .eq('id', lease.property_id)
+              .single();
+
+            // Send notification to manager
+            await serviceClient.from('notifications').insert({
+              user_id: lease.gestionnaire_id,
+              lease_id: leaseId,
+              type: 'retard_paiement',
+              titre: '⚠️ Échecs de paiement répétés',
+              message: `Le locataire ${tenantProfile?.full_name || 'Inconnu'} a échoué ${MAX_CONSECUTIVE_FAILURES} tentatives de paiement consécutives pour "${property?.titre || 'la propriété'}". Veuillez vérifier la situation.`
+            });
+            console.log('Manager notified about consecutive payment failures');
+
+            // Log the notification sent
+            await serviceClient.from('audit_logs').insert({
+              user_id: lease.gestionnaire_id,
+              action: 'payment_failure_notification_sent',
+              resource_type: 'notification',
+              resource_id: leaseId,
+              details: {
+                tenant_id: userId,
+                consecutive_failures: MAX_CONSECUTIVE_FAILURES,
+                timestamp: new Date().toISOString()
+              }
+            });
+          }
+        }
+      }
     } catch (logError) {
       console.error('Failed to log payment error:', logError);
     }
