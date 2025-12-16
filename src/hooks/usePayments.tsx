@@ -113,35 +113,68 @@ export const usePayments = (leaseId?: string) => {
     mois_paiement: string;
     methode_paiement: string;
     numero_telephone: string;
-  }) => {
-    const { data, error } = await supabase.functions.invoke('initiate-payment', {
-      body: paymentData
-    });
+  }): Promise<{ data: any; error: { message: string; code?: string } | null }> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('initiate-payment', {
+        body: paymentData
+      });
 
-    if (error) {
+      if (error) {
+        // Extract detailed error message
+        let errorMessage = error.message || "Une erreur est survenue";
+        let errorCode = undefined;
+        
+        // Try to parse JSON error from edge function
+        try {
+          const parsed = JSON.parse(error.message);
+          errorMessage = parsed.error || parsed.message || errorMessage;
+          errorCode = parsed.code;
+        } catch {
+          // If not JSON, use as-is
+        }
+
+        toast({
+          variant: "destructive",
+          title: "Erreur de paiement",
+          description: errorMessage
+        });
+        return { data: null, error: { message: errorMessage, code: errorCode } };
+      }
+
+      // Check for error in response body
+      if (data?.error) {
+        toast({
+          variant: "destructive",
+          title: "Erreur de paiement",
+          description: data.error
+        });
+        return { data: null, error: { message: data.error } };
+      }
+
+      // Success cases
+      if (data?.simulation_mode) {
+        toast({
+          title: "Mode Simulation",
+          description: "Le paiement sera validé automatiquement (pas de vraie transaction)",
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Paiement initié",
+          description: "Veuillez suivre les instructions sur votre téléphone"
+        });
+      }
+
+      return { data, error: null };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erreur réseau, veuillez réessayer";
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error.message
+        description: errorMessage
       });
-      return { data: null, error };
+      return { data: null, error: { message: errorMessage } };
     }
-
-    // Check if simulation mode
-    if (data?.simulation_mode) {
-      toast({
-        title: "Mode Simulation",
-        description: "Le paiement sera validé automatiquement (pas de vraie transaction)",
-        variant: "default"
-      });
-    } else {
-      toast({
-        title: "Paiement initié",
-        description: "Veuillez suivre les instructions sur votre téléphone"
-      });
-    }
-
-    return { data, error: null };
   };
 
   const downloadReceipt = async (paymentId: string) => {
