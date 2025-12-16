@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { usePayments } from '@/hooks/usePayments';
-import { CreditCard, Smartphone, AlertCircle, CheckCircle, X, Loader2 } from 'lucide-react';
+import { CreditCard, Smartphone, AlertCircle, CheckCircle, X, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface PaymentSectionProps {
   leaseId: string;
@@ -32,6 +32,7 @@ export const PaymentSection = ({
   const [loading, setLoading] = useState(false);
   const [isSimulationMode, setIsSimulationMode] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentError, setPaymentError] = useState<{ message: string; code?: string } | null>(null);
   const [formData, setFormData] = useState({
     methode_paiement: 'mobile_money',
     numero_telephone: ''
@@ -43,6 +44,8 @@ export const PaymentSection = ({
     }
 
     setLoading(true);
+    setPaymentError(null);
+    
     try {
       const { data, error } = await createPayment({
         lease_id: leaseId,
@@ -52,13 +55,19 @@ export const PaymentSection = ({
         numero_telephone: formData.numero_telephone
       });
 
-      if (!error) {
+      if (error) {
+        setPaymentError(error);
+      } else {
         if (data?.simulation_mode) {
           setIsSimulationMode(true);
         }
         setPaymentSuccess(true);
         onSuccess?.();
       }
+    } catch (err) {
+      setPaymentError({ 
+        message: err instanceof Error ? err.message : "Une erreur inattendue est survenue" 
+      });
     } finally {
       setLoading(false);
     }
@@ -172,6 +181,32 @@ export const PaymentSection = ({
             Si le mode simulation est actif, le paiement sera validé automatiquement sans transaction réelle.
           </AlertDescription>
         </Alert>
+
+        {/* Alerte erreur avec retry */}
+        {paymentError && (
+          <Alert className="border-destructive bg-destructive/10">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <AlertTitle className="text-destructive">Échec du paiement</AlertTitle>
+            <AlertDescription className="text-destructive/90 text-sm">
+              <p className="mb-2">{paymentError.message}</p>
+              {paymentError.code && (
+                <p className="text-xs text-muted-foreground mb-2">Code: {paymentError.code}</p>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setPaymentError(null);
+                  handlePayment();
+                }}
+                className="mt-1"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Réessayer
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Bouton de paiement */}
         <Button 
