@@ -24,7 +24,10 @@ serve(async (req) => {
 
     const { lease_id, montant, mois_paiement, methode_paiement, numero_telephone } = await req.json();
 
-    console.log('Initiating payment:', { lease_id, montant, methode_paiement });
+    // Convert month format "2025-12" to valid date "2025-12-01"
+    const formattedMoisPaiement = mois_paiement.length === 7 ? `${mois_paiement}-01` : mois_paiement;
+
+    console.log('Initiating payment:', { lease_id, montant, methode_paiement, mois_paiement: formattedMoisPaiement });
 
     // Create payment record
     const { data: payment, error: paymentError } = await supabaseClient
@@ -32,7 +35,7 @@ serve(async (req) => {
       .insert({
         lease_id,
         montant,
-        mois_paiement,
+        mois_paiement: formattedMoisPaiement,
         methode_paiement,
         numero_telephone,
         statut: 'en_cours'
@@ -93,7 +96,7 @@ serve(async (req) => {
         amount: montant,
         currency: 'XOF',
         channels: 'ALL', // Orange, MTN, Moov, Wave automatique
-        description: `Paiement loyer - ${mois_paiement}`,
+        description: `Paiement loyer - ${formattedMoisPaiement}`,
         return_url: `${Deno.env.get('APP_DOMAIN')}/payment/success`,
         notify_url: `${Deno.env.get('APP_DOMAIN')}/api/payments/webhook`,
         customer_phone_number: numero_telephone,
