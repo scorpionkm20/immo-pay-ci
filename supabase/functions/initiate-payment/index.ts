@@ -29,11 +29,24 @@ serve(async (req) => {
 
     console.log('Initiating payment:', { lease_id, montant, methode_paiement, mois_paiement: formattedMoisPaiement });
 
+    // Fetch lease to attach space_id (required) and to let RLS validate ownership
+    const { data: lease, error: leaseError } = await supabaseClient
+      .from('leases')
+      .select('id, space_id')
+      .eq('id', lease_id)
+      .single();
+
+    if (leaseError) {
+      console.error('Lease fetch error:', leaseError);
+      throw leaseError;
+    }
+
     // Create payment record
     const { data: payment, error: paymentError } = await supabaseClient
       .from('payments')
       .insert({
         lease_id,
+        space_id: lease.space_id,
         montant,
         mois_paiement: formattedMoisPaiement,
         methode_paiement,
