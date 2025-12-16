@@ -211,26 +211,45 @@ const MyLeases = () => {
                   </div>
 
                   {/* Caution status */}
-                  <div className="p-3 bg-muted rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Caution</p>
-                      <p className="text-sm text-muted-foreground">
-                        {lease.caution_montant.toLocaleString()} FCFA
-                      </p>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Caution</p>
+                        <p className="text-sm text-muted-foreground">
+                          {lease.caution_montant.toLocaleString()} FCFA
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {lease.caution_payee ? (
+                          <>
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <span className="text-sm font-medium text-green-600">Payée</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-5 w-5 text-destructive" />
+                            <span className="text-sm font-medium text-destructive">Non payée</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {lease.caution_payee ? (
-                        <>
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                          <span className="text-sm font-medium text-green-600">Payée</span>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-5 w-5 text-destructive" />
-                          <span className="text-sm font-medium text-destructive">Non payée</span>
-                        </>
-                      )}
-                    </div>
+                    {/* Message about contract availability */}
+                    {userRole === 'locataire' && !lease.caution_payee && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          Le contrat de bail sera disponible après le paiement de la caution
+                        </p>
+                      </div>
+                    )}
+                    {userRole === 'locataire' && lease.caution_payee && !lease.contrat_url && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Caution payée - Le contrat sera bientôt généré par le gestionnaire
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Section de paiement pour locataires avec paiement en attente */}
