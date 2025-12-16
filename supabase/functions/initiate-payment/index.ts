@@ -167,8 +167,43 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in initiate-payment:', error);
     const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
+    const errorCode = (error as any)?.code || 'UNKNOWN';
+    
+    // Log error to audit_logs using service role client
+    try {
+      const serviceClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      // Get user ID from JWT token
+      const authHeader = req.headers.get('Authorization');
+      let userId = '00000000-0000-0000-0000-000000000000';
+      if (authHeader) {
+        try {
+          const token = authHeader.replace('Bearer ', '');
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.sub || userId;
+        } catch {}
+      }
+      
+      await serviceClient.from('audit_logs').insert({
+        user_id: userId,
+        action: 'payment_error',
+        resource_type: 'payment',
+        details: {
+          error_message: errorMessage,
+          error_code: errorCode,
+          timestamp: new Date().toISOString()
+        }
+      });
+      console.log('Payment error logged to audit_logs');
+    } catch (logError) {
+      console.error('Failed to log payment error:', logError);
+    }
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: errorMessage, code: errorCode }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,

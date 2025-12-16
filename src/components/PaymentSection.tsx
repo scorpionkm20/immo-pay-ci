@@ -33,6 +33,9 @@ export const PaymentSection = ({
   const [isSimulationMode, setIsSimulationMode] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentError, setPaymentError] = useState<{ message: string; code?: string } | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
+  
   const [formData, setFormData] = useState({
     methode_paiement: 'mobile_money',
     numero_telephone: ''
@@ -57,21 +60,26 @@ export const PaymentSection = ({
 
       if (error) {
         setPaymentError(error);
+        setRetryCount(prev => prev + 1);
       } else {
         if (data?.simulation_mode) {
           setIsSimulationMode(true);
         }
         setPaymentSuccess(true);
+        setRetryCount(0); // Reset on success
         onSuccess?.();
       }
     } catch (err) {
       setPaymentError({ 
         message: err instanceof Error ? err.message : "Une erreur inattendue est survenue" 
       });
+      setRetryCount(prev => prev + 1);
     } finally {
       setLoading(false);
     }
   };
+
+  const canRetry = retryCount < MAX_RETRIES;
 
   if (paymentSuccess) {
     return (
@@ -186,24 +194,33 @@ export const PaymentSection = ({
         {paymentError && (
           <Alert className="border-destructive bg-destructive/10">
             <AlertTriangle className="h-4 w-4 text-destructive" />
-            <AlertTitle className="text-destructive">Échec du paiement</AlertTitle>
+            <AlertTitle className="text-destructive">
+              Échec du paiement {retryCount > 0 && `(tentative ${retryCount}/${MAX_RETRIES})`}
+            </AlertTitle>
             <AlertDescription className="text-destructive/90 text-sm">
               <p className="mb-2">{paymentError.message}</p>
               {paymentError.code && (
                 <p className="text-xs text-muted-foreground mb-2">Code: {paymentError.code}</p>
               )}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  setPaymentError(null);
-                  handlePayment();
-                }}
-                className="mt-1"
-              >
-                <RefreshCw className="h-3 w-3 mr-1" />
-                Réessayer
-              </Button>
+              {canRetry ? (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setPaymentError(null);
+                    handlePayment();
+                  }}
+                  className="mt-1"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Réessayer ({MAX_RETRIES - retryCount} restants)
+                </Button>
+              ) : (
+                <div className="mt-2 p-2 bg-muted rounded text-muted-foreground text-xs">
+                  <p className="font-medium">Nombre maximum de tentatives atteint.</p>
+                  <p>Veuillez contacter le support ou réessayer plus tard.</p>
+                </div>
+              )}
             </AlertDescription>
           </Alert>
         )}
