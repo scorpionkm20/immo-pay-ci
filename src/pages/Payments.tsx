@@ -185,9 +185,11 @@ export default function Payments() {
                       <p className="text-sm text-muted-foreground">
                         {new Date(payment.mois_paiement).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {payment.methode_paiement.replace('_', ' ').toUpperCase()}
-                      </p>
+                      {payment.methode_paiement && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {payment.methode_paiement.replace('_', ' ').toUpperCase()}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {getStatusBadge(payment.statut)}
