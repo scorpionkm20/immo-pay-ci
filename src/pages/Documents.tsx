@@ -352,6 +352,7 @@ const Documents = () => {
             onOpenChange={setGeneratingContract}
             leaseId={selectedLeaseId}
             spaceId={userLeases.find(l => l.id === selectedLeaseId)?.space_id || ''}
+            cautionPayee={userLeases.find(l => l.id === selectedLeaseId)?.caution_payee || false}
             onSuccess={() => {
               refetch();
             }}
