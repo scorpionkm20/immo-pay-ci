@@ -137,9 +137,26 @@ export const PaymentSection = ({
             <span className="text-2xl font-bold text-primary">{montant.toLocaleString()} FCFA</span>
           </div>
           {isCaution && (
-            <p className="text-xs text-muted-foreground mt-2">
-              ⚠️ Ce paiement est requis pour activer votre bail
-            </p>
+            <div className="mt-3 pt-3 border-t border-border">
+              <p className="text-xs font-medium text-foreground mb-2">Détails de la caution (5x loyer) :</p>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div className="flex justify-between">
+                  <span>• 2 mois d'avance</span>
+                  <span>{(montant / 5 * 2).toLocaleString()} FCFA</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• 2 mois de garantie</span>
+                  <span>{(montant / 5 * 2).toLocaleString()} FCFA</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• 1 mois démarcheur</span>
+                  <span>{(montant / 5).toLocaleString()} FCFA</span>
+                </div>
+              </div>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
+                ⚠️ Après ce paiement, votre premier loyer sera dû dans 2 mois
+              </p>
+            </div>
           )}
         </div>
 

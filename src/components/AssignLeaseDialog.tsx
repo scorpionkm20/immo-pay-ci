@@ -96,6 +96,9 @@ const AssignLeaseDialog = ({ open, onOpenChange, property }: AssignLeaseDialogPr
 
     setLoading(true);
 
+    // Caution = 5x loyer mensuel (2 mois avance + 2 mois garantie + 1 mois démarcheur)
+    const cautionTotale = property.prix_mensuel * 5;
+    
     const leaseData = {
       property_id: property.id,
       locataire_id: formData.locataire_id,
@@ -103,7 +106,7 @@ const AssignLeaseDialog = ({ open, onOpenChange, property }: AssignLeaseDialogPr
       date_debut: formData.date_debut,
       date_fin: formData.date_fin || undefined,
       montant_mensuel: property.prix_mensuel,
-      caution_montant: property.caution,
+      caution_montant: cautionTotale,
       caution_payee: formData.caution_payee
     };
 
@@ -134,13 +137,24 @@ const AssignLeaseDialog = ({ open, onOpenChange, property }: AssignLeaseDialogPr
         </DialogHeader>
 
         {property && (
-          <div className="mb-4 p-4 bg-muted rounded-lg">
+          <div className="mb-4 p-4 bg-muted rounded-lg space-y-2">
             <p className="font-semibold">{property.titre}</p>
             <p className="text-sm text-muted-foreground">
-              Loyer: {property.prix_mensuel.toLocaleString()} FCFA/mois
+              Loyer mensuel: <span className="font-medium text-foreground">{property.prix_mensuel.toLocaleString()} FCFA</span>
             </p>
-            <p className="text-sm text-muted-foreground">
-              Caution: {property.caution.toLocaleString()} FCFA
+            <div className="pt-2 border-t border-border">
+              <p className="text-sm font-medium mb-1">Caution totale (5x loyer) :</p>
+              <p className="text-lg font-bold text-primary">
+                {(property.prix_mensuel * 5).toLocaleString()} FCFA
+              </p>
+              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                <p>• 2 mois d'avance : {(property.prix_mensuel * 2).toLocaleString()} FCFA</p>
+                <p>• 2 mois de garantie : {(property.prix_mensuel * 2).toLocaleString()} FCFA</p>
+                <p>• 1 mois démarcheur : {property.prix_mensuel.toLocaleString()} FCFA</p>
+              </div>
+            </div>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+              ⚠️ Le premier loyer sera dû 2 mois après le paiement de la caution
             </p>
           </div>
         )}

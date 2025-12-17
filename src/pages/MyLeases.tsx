@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useLeases, Lease } from '@/hooks/useLeases';
+import { useLeases, Lease, getFirstRentDueDate, isRentDueNow } from '@/hooks/useLeases';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -214,8 +214,8 @@ const MyLeases = () => {
                   <div className="p-3 bg-muted rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium">Caution</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm font-medium">Caution (5x loyer)</p>
+                        <p className="text-lg font-bold text-primary">
                           {lease.caution_montant.toLocaleString()} FCFA
                         </p>
                       </div>
@@ -233,6 +233,41 @@ const MyLeases = () => {
                         )}
                       </div>
                     </div>
+                    
+                    {/* Détail de la caution */}
+                    <div className="mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground mb-1">Composition :</p>
+                      <div className="grid grid-cols-2 gap-1">
+                        <span>• 2 mois d'avance</span>
+                        <span className="text-right">{(lease.montant_mensuel * 2).toLocaleString()} FCFA</span>
+                        <span>• 2 mois de garantie</span>
+                        <span className="text-right">{(lease.montant_mensuel * 2).toLocaleString()} FCFA</span>
+                        <span>• 1 mois démarcheur</span>
+                        <span className="text-right">{lease.montant_mensuel.toLocaleString()} FCFA</span>
+                      </div>
+                    </div>
+
+                    {/* Info sur quand commence le loyer */}
+                    {lease.caution_payee && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        {(() => {
+                          const firstRentDate = getFirstRentDueDate(lease.date_caution_payee);
+                          const rentDueNow = isRentDueNow(lease.date_caution_payee);
+                          return (
+                            <p className={`text-xs flex items-center gap-1 ${rentDueNow ? 'text-amber-600' : 'text-green-600'}`}>
+                              <CheckCircle className="h-3 w-3" />
+                              {firstRentDate 
+                                ? rentDueNow 
+                                  ? `Premier loyer dû depuis le ${firstRentDate.toLocaleDateString('fr-FR')}`
+                                  : `Premier loyer dû le ${firstRentDate.toLocaleDateString('fr-FR')} (2 mois d'avance inclus)`
+                                : 'Premier loyer dû 2 mois après la caution (2 mois d\'avance inclus)'
+                              }
+                            </p>
+                          );
+                        })()}
+                      </div>
+                    )}
+                    
                     {/* Message about contract availability */}
                     {userRole === 'locataire' && !lease.caution_payee && (
                       <div className="mt-2 pt-2 border-t border-border">

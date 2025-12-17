@@ -253,6 +253,7 @@ export type Database = {
           caution_payee: boolean | null
           contrat_url: string | null
           created_at: string
+          date_caution_payee: string | null
           date_debut: string
           date_fin: string | null
           gestionnaire_id: string
@@ -269,6 +270,7 @@ export type Database = {
           caution_payee?: boolean | null
           contrat_url?: string | null
           created_at?: string
+          date_caution_payee?: string | null
           date_debut: string
           date_fin?: string | null
           gestionnaire_id: string
@@ -285,6 +287,7 @@ export type Database = {
           caution_payee?: boolean | null
           contrat_url?: string | null
           created_at?: string
+          date_caution_payee?: string | null
           date_debut?: string
           date_fin?: string | null
           gestionnaire_id?: string
