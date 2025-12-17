@@ -48,6 +48,11 @@ serve(async (req) => {
 
     if (leaseError) throw leaseError;
 
+    // Vérifier que la caution est payée avant de générer le contrat
+    if (!lease.caution_payee) {
+      throw new Error('La caution doit être payée avant de générer le contrat de bail');
+    }
+
     // Récupérer le template (ou utiliser le template par défaut)
     let template;
     if (templateId) {

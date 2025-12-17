@@ -15,14 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useContractTemplates } from '@/hooks/useContractTemplates';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, AlertTriangle } from 'lucide-react';
 
 interface GenerateContractDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   leaseId: string;
   spaceId: string;
+  cautionPayee?: boolean;
   onSuccess?: () => void;
 }
 
@@ -31,6 +33,7 @@ export const GenerateContractDialog = ({
   onOpenChange,
   leaseId,
   spaceId,
+  cautionPayee = false,
   onSuccess,
 }: GenerateContractDialogProps) => {
   const { templates, loading: templatesLoading, generateContract } = useContractTemplates(spaceId);
@@ -63,12 +66,22 @@ export const GenerateContractDialog = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          {!cautionPayee && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                La caution n'a pas encore été payée par le locataire. Le contrat de bail ne peut être 
+                généré qu'après le paiement de la caution.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="template">Template de contrat</Label>
             {templatesLoading ? (
               <p className="text-sm text-muted-foreground">Chargement des templates...</p>
             ) : (
-              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+              <Select value={selectedTemplate} onValueChange={setSelectedTemplate} disabled={!cautionPayee}>
                 <SelectTrigger id="template">
                   <SelectValue placeholder="Sélectionner un template" />
                 </SelectTrigger>
@@ -103,7 +116,7 @@ export const GenerateContractDialog = ({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating}>
               Annuler
             </Button>
-            <Button onClick={handleGenerate} disabled={generating || templatesLoading}>
+            <Button onClick={handleGenerate} disabled={generating || templatesLoading || !cautionPayee}>
               {generating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Générer le contrat PDF
             </Button>
