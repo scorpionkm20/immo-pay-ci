@@ -13,11 +13,27 @@ export interface Lease {
   montant_mensuel: number;
   caution_payee: boolean;
   caution_montant: number;
+  date_caution_payee: string | null; // Date de paiement de la caution
   statut: string;
   contrat_url: string | null;
   created_at: string;
   updated_at: string;
 }
+
+// Utilitaire pour calculer la date du premier loyer (2 mois après caution)
+export const getFirstRentDueDate = (dateCautionPayee: string | null): Date | null => {
+  if (!dateCautionPayee) return null;
+  const date = new Date(dateCautionPayee);
+  date.setMonth(date.getMonth() + 2);
+  return date;
+};
+
+// Utilitaire pour vérifier si le loyer est dû maintenant
+export const isRentDueNow = (dateCautionPayee: string | null): boolean => {
+  const firstRentDate = getFirstRentDueDate(dateCautionPayee);
+  if (!firstRentDate) return false;
+  return new Date() >= firstRentDate;
+};
 
 export const useLeases = (userRole?: string | null) => {
   const [leases, setLeases] = useState<Lease[]>([]);
