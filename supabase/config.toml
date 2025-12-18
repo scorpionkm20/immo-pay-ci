@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.bedroom-designer]
 verify_jwt = true
+
+[functions.generate-monthly-rent-invoices]
+verify_jwt = false
