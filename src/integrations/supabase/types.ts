@@ -555,6 +555,167 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_distribution_config: {
+        Row: {
+          created_at: string
+          created_by: string
+          demarcheur_nom: string | null
+          demarcheur_operateur: string | null
+          demarcheur_telephone: string | null
+          gestionnaire_nom: string
+          gestionnaire_operateur: string
+          gestionnaire_pourcentage: number
+          gestionnaire_telephone: string
+          id: string
+          proprietaire_nom: string
+          proprietaire_operateur: string
+          proprietaire_pourcentage: number
+          proprietaire_telephone: string
+          space_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          demarcheur_nom?: string | null
+          demarcheur_operateur?: string | null
+          demarcheur_telephone?: string | null
+          gestionnaire_nom: string
+          gestionnaire_operateur?: string
+          gestionnaire_pourcentage?: number
+          gestionnaire_telephone: string
+          id?: string
+          proprietaire_nom: string
+          proprietaire_operateur?: string
+          proprietaire_pourcentage?: number
+          proprietaire_telephone: string
+          space_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          demarcheur_nom?: string | null
+          demarcheur_operateur?: string | null
+          demarcheur_telephone?: string | null
+          gestionnaire_nom?: string
+          gestionnaire_operateur?: string
+          gestionnaire_pourcentage?: number
+          gestionnaire_telephone?: string
+          id?: string
+          proprietaire_nom?: string
+          proprietaire_operateur?: string
+          proprietaire_pourcentage?: number
+          proprietaire_telephone?: string
+          space_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_distribution_config_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: true
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_distributions: {
+        Row: {
+          created_at: string
+          detail_caution: Json | null
+          id: string
+          montant_demarcheur: number | null
+          montant_gestionnaire: number
+          montant_proprietaire: number
+          montant_total: number
+          notes: string | null
+          operateur_demarcheur: string | null
+          operateur_gestionnaire: string | null
+          operateur_proprietaire: string | null
+          payment_id: string
+          space_id: string
+          statut_demarcheur: string | null
+          statut_gestionnaire: string
+          statut_proprietaire: string
+          telephone_demarcheur: string | null
+          telephone_gestionnaire: string | null
+          telephone_proprietaire: string | null
+          transaction_id_demarcheur: string | null
+          transaction_id_gestionnaire: string | null
+          transaction_id_proprietaire: string | null
+          type_distribution: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          detail_caution?: Json | null
+          id?: string
+          montant_demarcheur?: number | null
+          montant_gestionnaire?: number
+          montant_proprietaire?: number
+          montant_total: number
+          notes?: string | null
+          operateur_demarcheur?: string | null
+          operateur_gestionnaire?: string | null
+          operateur_proprietaire?: string | null
+          payment_id: string
+          space_id: string
+          statut_demarcheur?: string | null
+          statut_gestionnaire?: string
+          statut_proprietaire?: string
+          telephone_demarcheur?: string | null
+          telephone_gestionnaire?: string | null
+          telephone_proprietaire?: string | null
+          transaction_id_demarcheur?: string | null
+          transaction_id_gestionnaire?: string | null
+          transaction_id_proprietaire?: string | null
+          type_distribution: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          detail_caution?: Json | null
+          id?: string
+          montant_demarcheur?: number | null
+          montant_gestionnaire?: number
+          montant_proprietaire?: number
+          montant_total?: number
+          notes?: string | null
+          operateur_demarcheur?: string | null
+          operateur_gestionnaire?: string | null
+          operateur_proprietaire?: string | null
+          payment_id?: string
+          space_id?: string
+          statut_demarcheur?: string | null
+          statut_gestionnaire?: string
+          statut_proprietaire?: string
+          telephone_demarcheur?: string | null
+          telephone_gestionnaire?: string | null
+          telephone_proprietaire?: string | null
+          transaction_id_demarcheur?: string | null
+          transaction_id_gestionnaire?: string | null
+          transaction_id_proprietaire?: string | null
+          type_distribution?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_distributions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_distributions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "management_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_reminders: {
         Row: {
           created_at: string
