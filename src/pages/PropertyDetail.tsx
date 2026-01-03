@@ -583,6 +583,8 @@ const PropertyDetail = () => {
           propertyTitle={property.titre}
           managerId={property.gestionnaire_id}
           spaceId={property.space_id}
+          monthlyRent={property.prix_mensuel}
+          cautionAmount={property.caution}
           onSuccess={() => {
             toast.success("Demande envoyée avec succès");
           }}
