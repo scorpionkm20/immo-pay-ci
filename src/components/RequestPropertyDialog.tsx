@@ -93,9 +93,11 @@ export const RequestPropertyDialog = ({
     setLoading(true);
 
     try {
-      // Create lease with 'en_attente_caution' status
+      // Calculate total caution as 5x monthly rent
+      const calculatedCaution = monthlyRent * 5;
       const startDate = proposedStartDate || new Date().toISOString().split('T')[0];
       
+      // Create lease with 'en_attente_caution' status
       const { data: leaseData, error: leaseError } = await supabase
         .from('leases')
         .insert({
@@ -105,7 +107,7 @@ export const RequestPropertyDialog = ({
           space_id: spaceId,
           date_debut: startDate,
           montant_mensuel: monthlyRent,
-          caution_montant: cautionAmount,
+          caution_montant: calculatedCaution,
           statut: 'en_attente_caution',
           caution_payee: false
         })
@@ -114,6 +116,22 @@ export const RequestPropertyDialog = ({
 
       if (leaseError) {
         throw leaseError;
+      }
+
+      // Create a payment record for the caution
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          lease_id: leaseData.id,
+          space_id: spaceId,
+          montant: calculatedCaution,
+          mois_paiement: startDate,
+          statut: 'en_attente'
+        });
+
+      if (paymentError) {
+        console.error('Payment creation error:', paymentError);
+        // Don't fail - the lease was created, just log the error
       }
 
       setCreatedLeaseId(leaseData.id);
@@ -152,7 +170,7 @@ export const RequestPropertyDialog = ({
     onSuccess?.();
   };
 
-  const totalCaution = cautionAmount; // 5 months as caution
+  const totalCaution = monthlyRent * 5; // 5 months as caution
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

@@ -693,9 +693,30 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* Locataire Section - AI Bedroom Designer */}
+        {/* Locataire Section - Pending Caution Alert & AI Bedroom Designer */}
         {userRole === 'locataire' && (
           <div className="mb-8 space-y-6">
+            {/* Alert for pending caution payments */}
+            {stats?.pendingPayments && stats.pendingPayments > 0 && (
+              <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
+                    <AlertCircle className="h-5 w-5" />
+                    Paiement en attente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-amber-800 dark:text-amber-200 mb-4">
+                    Vous avez des paiements en attente. Finalisez vos paiements pour activer vos baux.
+                  </p>
+                  <Button onClick={() => navigate('/my-leases')} variant="default" size="sm">
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Voir mes baux et payer
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             {/* AI Bedroom Designer & Saved Designs Section */}
             <div className="grid gap-4 md:grid-cols-2">
               <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/bedroom-designer')}>
