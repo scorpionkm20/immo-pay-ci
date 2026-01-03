@@ -6,9 +6,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home, Calendar, DollarSign, CheckCircle, XCircle, FileText, Wrench, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Home, Calendar, DollarSign, CheckCircle, XCircle, FileText, Wrench, CreditCard, ChevronDown, ChevronUp, Clock, AlertTriangle } from 'lucide-react';
 import { PaymentSection } from '@/components/PaymentSection';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface LeaseWithProperty extends Lease {
   property?: {
@@ -34,6 +35,7 @@ const MyLeases = () => {
   const { leases, loading, refetch } = useLeases(userRole);
   const [myLeases, setMyLeases] = useState<LeaseWithProperty[]>([]);
   const [expandedPayment, setExpandedPayment] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('all');
 
   useEffect(() => {
     if (!user) {
@@ -98,7 +100,15 @@ const MyLeases = () => {
     setMyLeases(leasesWithDetails);
   };
 
-  const getStatusBadge = (statut: string) => {
+  const getStatusBadge = (statut: string, cautionPayee: boolean) => {
+    if (statut === 'en_attente_caution' || (statut === 'actif' && !cautionPayee)) {
+      return (
+        <Badge className="bg-amber-500 hover:bg-amber-600">
+          <Clock className="h-3 w-3 mr-1" />
+          En attente de caution
+        </Badge>
+      );
+    }
     switch (statut) {
       case 'actif':
         return <Badge className="bg-green-600">Actif</Badge>;
@@ -108,6 +118,12 @@ const MyLeases = () => {
         return <Badge variant="outline">{statut}</Badge>;
     }
   };
+
+  const pendingCautionLeases = myLeases.filter(l => 
+    (l.statut === 'en_attente_caution' || (l.statut === 'actif' && !l.caution_payee)) && l.pendingPayment?.isCaution
+  );
+  const activeLeases = myLeases.filter(l => l.statut === 'actif' && l.caution_payee);
+  const otherLeases = myLeases.filter(l => !pendingCautionLeases.includes(l) && !activeLeases.includes(l));
 
   const handlePaymentSuccess = () => {
     refetch();
@@ -169,7 +185,7 @@ const MyLeases = () => {
                         {lease.property?.adresse}, {lease.property?.ville}
                       </CardDescription>
                     </div>
-                    {getStatusBadge(lease.statut)}
+                    {getStatusBadge(lease.statut, lease.caution_payee)}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
