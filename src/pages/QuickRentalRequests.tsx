@@ -53,6 +53,7 @@ export default function QuickRentalRequests() {
 
     setLoading(true);
     try {
+      // Get rental requests with joined data
       const { data: requestsData, error } = await supabase
         .from('rental_requests')
         .select(`
@@ -69,35 +70,34 @@ export default function QuickRentalRequests() {
 
       if (error) throw error;
 
-      const tenantIds = [...new Set(requestsData?.map(r => r.tenant_id))];
-      const propertyIds = [...new Set(requestsData?.map(r => r.property_id))];
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .in('user_id', tenantIds);
-
-      const tenantEmails: Record<string, string> = {};
-      for (const id of tenantIds) {
-        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(id);
-        if (authUser?.email) {
-          tenantEmails[id] = authUser.email;
-        }
+      if (!requestsData || requestsData.length === 0) {
+        setRequests([]);
+        return;
       }
 
+      const tenantIds = [...new Set(requestsData.map(r => r.tenant_id))];
+      const propertyIds = [...new Set(requestsData.map(r => r.property_id))];
+
+      // Fetch profiles for tenant names
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone')
+        .in('user_id', tenantIds);
+
+      // Fetch properties
       const { data: propertiesData } = await supabase
         .from('properties')
         .select('id, titre, prix_mensuel, caution')
         .in('id', propertyIds);
 
-      const requestsWithDetails: RequestWithDetails[] = requestsData?.map(request => {
+      const requestsWithDetails: RequestWithDetails[] = requestsData.map(request => {
         const profile = profiles?.find(p => p.user_id === request.tenant_id);
         const property = propertiesData?.find(p => p.id === request.property_id);
         
         return {
           id: request.id,
           tenant_name: profile?.full_name || 'Nom inconnu',
-          tenant_email: tenantEmails[request.tenant_id] || '',
+          tenant_email: profile?.phone || '',
           property_title: property?.titre || 'Propriété inconnue',
           property_monthly_rent: property?.prix_mensuel || 0,
           property_caution: property?.caution || 0,
@@ -105,7 +105,7 @@ export default function QuickRentalRequests() {
           proposed_start_date: request.proposed_start_date || '',
           created_at: request.created_at
         };
-      }) || [];
+      });
 
       setRequests(requestsWithDetails);
     } catch (error: any) {
