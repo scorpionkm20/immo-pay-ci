@@ -247,56 +247,127 @@ export type Database = {
           },
         ]
       }
+      lease_payment_reminders: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string | null
+          id: string
+          lease_id: string
+          reminder_date: string
+          reminder_type: string
+          sent_at: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string | null
+          id?: string
+          lease_id: string
+          reminder_date: string
+          reminder_type: string
+          sent_at?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string | null
+          id?: string
+          lease_id?: string
+          reminder_date?: string
+          reminder_type?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_payment_reminders_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leases: {
         Row: {
+          advance_months_consumed: number | null
+          advance_months_count: number | null
+          agency_months_count: number | null
           caution_montant: number
+          caution_months_count: number | null
           caution_payee: boolean | null
+          contract_generated_at: string | null
           contrat_url: string | null
           created_at: string
           date_caution_payee: string | null
           date_debut: string
           date_fin: string | null
+          first_regular_payment_date: string | null
           gestionnaire_id: string
           id: string
           locataire_id: string
           montant_mensuel: number
+          payment_status: string | null
           property_id: string
+          receipt_uploaded_at: string | null
+          receipt_uploaded_by: string | null
+          receipt_url: string | null
           space_id: string
           statut: string
+          tenant_confirmed_at: string | null
           updated_at: string
         }
         Insert: {
+          advance_months_consumed?: number | null
+          advance_months_count?: number | null
+          agency_months_count?: number | null
           caution_montant: number
+          caution_months_count?: number | null
           caution_payee?: boolean | null
+          contract_generated_at?: string | null
           contrat_url?: string | null
           created_at?: string
           date_caution_payee?: string | null
           date_debut: string
           date_fin?: string | null
+          first_regular_payment_date?: string | null
           gestionnaire_id: string
           id?: string
           locataire_id: string
           montant_mensuel: number
+          payment_status?: string | null
           property_id: string
+          receipt_uploaded_at?: string | null
+          receipt_uploaded_by?: string | null
+          receipt_url?: string | null
           space_id: string
           statut?: string
+          tenant_confirmed_at?: string | null
           updated_at?: string
         }
         Update: {
+          advance_months_consumed?: number | null
+          advance_months_count?: number | null
+          agency_months_count?: number | null
           caution_montant?: number
+          caution_months_count?: number | null
           caution_payee?: boolean | null
+          contract_generated_at?: string | null
           contrat_url?: string | null
           created_at?: string
           date_caution_payee?: string | null
           date_debut?: string
           date_fin?: string | null
+          first_regular_payment_date?: string | null
           gestionnaire_id?: string
           id?: string
           locataire_id?: string
           montant_mensuel?: number
+          payment_status?: string | null
           property_id?: string
+          receipt_uploaded_at?: string | null
+          receipt_uploaded_by?: string | null
+          receipt_url?: string | null
           space_id?: string
           statut?: string
+          tenant_confirmed_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1630,6 +1701,11 @@ export type Database = {
     }
     Enums: {
       app_role: "locataire" | "gestionnaire" | "proprietaire" | "admin"
+      lease_payment_status:
+        | "pending"
+        | "awaiting_tenant_confirmation"
+        | "verified"
+        | "overdue"
       property_status:
         | "disponible"
         | "loue"
@@ -1765,6 +1841,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["locataire", "gestionnaire", "proprietaire", "admin"],
+      lease_payment_status: [
+        "pending",
+        "awaiting_tenant_confirmation",
+        "verified",
+        "overdue",
+      ],
       property_status: [
         "disponible",
         "loue",
